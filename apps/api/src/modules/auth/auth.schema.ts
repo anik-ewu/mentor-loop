@@ -1,0 +1,23 @@
+import { z } from 'zod';
+
+export const signupSchema = z.object({
+  name: z.string().trim().min(2, 'Name is too short').max(80),
+  email: z.email('Enter a valid email').trim().toLowerCase(),
+  password: z.string().min(8, 'Use at least 8 characters').max(128),
+});
+
+export const loginSchema = z.object({
+  email: z.email('Enter a valid email').trim().toLowerCase(),
+  password: z.string().min(1, 'Password is required'),
+});
+
+export const googleSchema = z.object({
+  credential: z.string().min(1),
+});
+
+export const demoSchema = z.object({
+  role: z.enum(['user', 'admin']),
+});
+
+export type SignupInput = z.infer<typeof signupSchema>;
+export type LoginInput = z.infer<typeof loginSchema>;

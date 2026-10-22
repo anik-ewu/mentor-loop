@@ -1,0 +1,76 @@
+generator client {
+  provider = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  user
+  admin
+}
+
+enum SlotStatus {
+  open
+  booked
+}
+
+enum BookingStatus {
+  pending
+  confirmed
+  cancelled
+  completed
+}
+
+model User {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  passwordHash String?
+  googleId     String?   @unique
+  name         String
+  avatarUrl    String?
+  role         Role      @default(user)
+  createdAt    DateTime  @default(now())
+  bookings     Booking[]
+}
+
+model Service {
+  id          String    @id @default(uuid())
+  name        String
+  description String
+  durationMin Int
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  bookings    Booking[]
+}
+
+model Slot {
+  id       String     @id @default(uuid())
+  startsAt DateTime
+  endsAt   DateTime
+  status   SlotStatus @default(open)
+  bookings Booking[]
+
+  @@index([startsAt])
+}
+
+model Booking {
+  id        String        @id @default(uuid())
+  userId    String
+  slotId    String
+  serviceId String
+  note      String?
+  cvUrl     String?
+  status    BookingStatus @default(pending)
+  createdAt DateTime      @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  slot    Slot    @relation(fields: [slotId], references: [id], onDelete: Cascade)
+  service Service @relation(fields: [serviceId], references: [id])
+
+  @@index([userId])
+  @@index([status])
+}

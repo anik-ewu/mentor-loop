@@ -64,8 +64,4 @@ export async function demoLogin(role: keyof typeof DEMO_EMAILS) {
   return user;
 }
 
-export async function getUser(id: string) {
-  const user = await prisma.user.findUnique({ where: { id } });
-  if (!user) throw unauthorized();
-  return user;
-}
+export const findUser = (id: string) => prisma.user.findUnique({ where: { id } });

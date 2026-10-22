@@ -29,7 +29,8 @@ export async function create(userId: string, input: CreateBookingInput) {
       where: { id: input.slotId, status: 'open', startsAt: { gt: new Date() } },
       data: { status: 'booked' },
     });
-    if (claimed.count === 0) throw conflict('Sorry, this slot was just taken. Please pick another.');
+    if (claimed.count === 0)
+      throw conflict('Sorry, this slot was just taken. Please pick another.');
 
     return tx.booking.create({ data: { ...input, userId }, include: withDetails });
   });
@@ -51,7 +52,11 @@ export const listAll = (status?: BookingStatus) =>
 
 async function setStatus(id: string, status: BookingStatus) {
   return prisma.$transaction(async (tx) => {
-    const booking = await tx.booking.update({ where: { id }, data: { status }, include: withDetails });
+    const booking = await tx.booking.update({
+      where: { id },
+      data: { status },
+      include: withDetails,
+    });
     if (status === 'cancelled') {
       await tx.slot.update({ where: { id: booking.slotId }, data: { status: 'open' } });
     }
@@ -63,7 +68,8 @@ export async function cancel(id: string, actor: { id: string; role: Role }) {
   const booking = await prisma.booking.findUnique({ where: { id } });
   if (!booking) throw notFound('Booking');
   if (actor.role !== 'admin' && booking.userId !== actor.id) throw forbidden();
-  if (!ACTIVE.includes(booking.status)) throw badRequest(`This booking is already ${booking.status}`);
+  if (!ACTIVE.includes(booking.status))
+    throw badRequest(`This booking is already ${booking.status}`);
   return setStatus(id, 'cancelled');
 }
 

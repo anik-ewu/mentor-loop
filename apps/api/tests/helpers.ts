@@ -18,7 +18,10 @@ export async function createUser(role: 'user' | 'admin' = 'user', email = `${rol
 export async function loginAs(role: 'user' | 'admin' = 'user', email?: string) {
   const user = await createUser(role, email);
   const agent = request.agent(app);
-  await agent.post('/api/auth/login').send({ email: user.email, password: 'password123' }).expect(200);
+  await agent
+    .post('/api/auth/login')
+    .send({ email: user.email, password: 'password123' })
+    .expect(200);
   return { agent, user };
 }
 

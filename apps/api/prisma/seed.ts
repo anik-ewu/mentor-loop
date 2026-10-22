@@ -68,14 +68,30 @@ async function main() {
     const [resume, career] = await prisma.service.findMany({ orderBy: { createdAt: 'asc' } });
     const firstSlots = await prisma.slot.findMany({ orderBy: { startsAt: 'asc' }, take: 2 });
     const samples = [
-      { slot: firstSlots[0], service: resume, status: 'confirmed' as const, note: 'Backend role at a fintech' },
-      { slot: firstSlots[1], service: career, status: 'pending' as const, note: 'Switching from .NET to AI engineering' },
+      {
+        slot: firstSlots[0],
+        service: resume,
+        status: 'confirmed' as const,
+        note: 'Backend role at a fintech',
+      },
+      {
+        slot: firstSlots[1],
+        service: career,
+        status: 'pending' as const,
+        note: 'Switching from .NET to AI engineering',
+      },
     ];
     for (const s of samples) {
       if (!s.slot || !s.service) continue;
       await prisma.slot.update({ where: { id: s.slot.id }, data: { status: 'booked' } });
       await prisma.booking.create({
-        data: { userId: demo.id, slotId: s.slot.id, serviceId: s.service.id, status: s.status, note: s.note },
+        data: {
+          userId: demo.id,
+          slotId: s.slot.id,
+          serviceId: s.service.id,
+          status: s.status,
+          note: s.note,
+        },
       });
     }
   }

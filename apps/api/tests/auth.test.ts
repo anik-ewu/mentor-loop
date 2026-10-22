@@ -37,13 +37,20 @@ describe('auth', () => {
     await createUser('user', 'me@test.dev');
     const agent = request.agent(app);
 
-    await agent.post('/api/auth/login').send({ email: 'me@test.dev', password: 'wrong' }).expect(401);
-    await agent.post('/api/auth/login').send({ email: 'me@test.dev', password: 'password123' }).expect(200);
+    await agent
+      .post('/api/auth/login')
+      .send({ email: 'me@test.dev', password: 'wrong' })
+      .expect(401);
+    await agent
+      .post('/api/auth/login')
+      .send({ email: 'me@test.dev', password: 'password123' })
+      .expect(200);
     const me = await agent.get('/api/auth/me').expect(200);
     expect(me.body.user.email).toBe('me@test.dev');
 
     await agent.post('/api/auth/logout').expect(204);
-    await agent.get('/api/auth/me').expect(401);
+    const after = await agent.get('/api/auth/me').expect(200);
+    expect(after.body.user).toBeNull();
   });
 
   it('links Google sign-in to an existing account with the same verified email', async () => {

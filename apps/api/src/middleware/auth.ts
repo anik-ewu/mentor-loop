@@ -21,6 +21,19 @@ export function requireAuth(req: Request, _res: Response, next: NextFunction) {
   }
 }
 
+/** Sets req.auth when a valid session cookie is present, never rejects. */
+export function optionalAuth(req: Request, _res: Response, next: NextFunction) {
+  const token = req.cookies?.[AUTH_COOKIE];
+  if (token) {
+    try {
+      req.auth = verifyToken(token);
+    } catch {
+      /* expired or invalid: treat as logged out */
+    }
+  }
+  next();
+}
+
 export function requireAdmin(req: Request, res: Response, next: NextFunction) {
   requireAuth(req, res, (err?: unknown) => {
     if (err) return next(err);

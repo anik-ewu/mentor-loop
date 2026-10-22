@@ -1,19 +1,31 @@
 {
   "name": "mentor-loop",
   "private": true,
-  "workspaces": ["apps/*"],
+  "workspaces": [
+    "apps/*"
+  ],
   "scripts": {
     "dev": "npm run dev --workspaces --if-present",
     "build": "npm run build --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
-    "lint": "npm run lint --workspaces --if-present",
+    "lint": "eslint .",
     "test": "npm run test --workspaces --if-present",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "db:generate": "npm run db:generate -w @mentor-loop/api",
+    "db:migrate": "npm run db:migrate -w @mentor-loop/api",
+    "db:seed": "npm run db:seed -w @mentor-loop/api"
   },
   "devDependencies": {
-    "prettier": "^3.3.3"
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.13.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.13.0",
+    "prettier": "^3.3.3",
+    "typescript-eslint": "^8.72.0"
   },
   "engines": {
     "node": ">=20"
-  }
+  },
+  "type": "module"
 }

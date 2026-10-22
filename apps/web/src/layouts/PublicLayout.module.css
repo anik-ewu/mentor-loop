@@ -70,3 +70,18 @@
 .footer .inner {
   flex-wrap: wrap;
 }
+
+.footerNav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+}
+
+.footerNav a {
+  color: var(--text-subtle);
+  transition: color 0.2s;
+}
+
+.footerNav a:hover {
+  color: var(--text);
+}

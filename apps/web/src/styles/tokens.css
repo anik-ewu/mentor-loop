@@ -50,6 +50,7 @@
   --info: #2f6fe4;
   --info-soft: #e6effd;
   --live: #10b981;
+  --shine: rgb(255 255 255 / 0.4);
 
   --shadow-sm: 0 1px 2px rgb(23 21 44 / 0.06);
   --shadow: 0 1px 2px rgb(23 21 44 / 0.04), 0 8px 24px -8px rgb(23 21 44 / 0.12);
@@ -65,6 +66,7 @@
     --surface: #14131f;
     --surface-2: #1c1a2b;
     --surface-glass: rgb(20 19 31 / 0.72);
+    --shine: rgb(255 255 255 / 0.07);
     --border: #29273d;
     --border-strong: #3a3754;
     --text: #f2f1fa;
@@ -93,6 +95,7 @@
   --surface: #14131f;
   --surface-2: #1c1a2b;
   --surface-glass: rgb(20 19 31 / 0.72);
+  --shine: rgb(255 255 255 / 0.07);
   --border: #29273d;
   --border-strong: #3a3754;
   --text: #f2f1fa;

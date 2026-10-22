@@ -24,6 +24,7 @@ services:
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       DEMO_MODE: ${DEMO_MODE:-true}
       SEED_ON_START: ${SEED_ON_START:-true}
+      ADMIN_NAME: ${ADMIN_NAME:-Alex Morgan}
       ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@mentorloop.dev}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin12345}
     depends_on:

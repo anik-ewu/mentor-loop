@@ -19,7 +19,7 @@ async function upsertUser(email: string, name: string, role: 'user' | 'admin', p
 async function main() {
   const admin = await upsertUser(
     process.env.ADMIN_EMAIL ?? 'admin@mentorloop.dev',
-    'Sabbir Hasan',
+    process.env.ADMIN_NAME ?? 'Alex Morgan',
     'admin',
     process.env.ADMIN_PASSWORD ?? 'admin12345',
   );
@@ -31,19 +31,19 @@ async function main() {
         {
           name: 'Resume Review',
           description:
-            'Line-by-line feedback on your CV: impact bullets, ATS keywords and layout, so recruiters call you back.',
+            'Detailed feedback on your CV and LinkedIn profile: stronger bullet points, the right keywords and a layout recruiters can scan in seconds.',
           durationMin: 45,
         },
         {
-          name: 'Career Guidance',
+          name: 'Career Strategy Call',
           description:
-            'A 1:1 talk about your next move: tech stack, job switch, interview prep plan and salary negotiation.',
+            'Talk through your next move: choosing a direction, switching roles or industries, and building a realistic 90-day plan.',
           durationMin: 45,
         },
         {
           name: 'Mock Interview',
           description:
-            'A realistic technical interview (DSA, system design or backend depth) with honest written feedback.',
+            'A realistic practice interview for your target role, followed by honest, specific feedback on what to improve.',
           durationMin: 60,
         },
       ],
@@ -65,20 +65,20 @@ async function main() {
     await prisma.slot.createMany({ data: slots });
 
     // A few sample bookings so the dashboards are not empty.
-    const [resume, career] = await prisma.service.findMany({ orderBy: { createdAt: 'asc' } });
+    const [resume, strategy] = await prisma.service.findMany({ orderBy: { createdAt: 'asc' } });
     const firstSlots = await prisma.slot.findMany({ orderBy: { startsAt: 'asc' }, take: 2 });
     const samples = [
       {
         slot: firstSlots[0],
         service: resume,
         status: 'confirmed' as const,
-        note: 'Backend role at a fintech',
+        note: 'Applying for product roles, want my CV to stand out',
       },
       {
         slot: firstSlots[1],
-        service: career,
+        service: strategy,
         status: 'pending' as const,
-        note: 'Switching from .NET to AI engineering',
+        note: 'Thinking about a move into data analytics',
       },
     ];
     for (const s of samples) {

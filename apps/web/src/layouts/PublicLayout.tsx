@@ -56,8 +56,13 @@ export function PublicLayout() {
       </main>
       <footer className={s.footer}>
         <div className={`container ${s.inner}`}>
-          <span>© {new Date().getFullYear()} MentorLoop. Built with care in Dhaka.</span>
-          <span>React · Node.js · PostgreSQL · Docker</span>
+          <span>© {new Date().getFullYear()} MentorLoop</span>
+          <nav className={s.footerNav} aria-label="Footer">
+            <Link to="/#services">Services</Link>
+            <Link to="/#how">How it works</Link>
+            <Link to="/#faq">FAQ</Link>
+            {!user && <Link to="/login">Log in</Link>}
+          </nav>
         </div>
       </footer>
     </>

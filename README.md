@@ -1,7 +1,7 @@
 <h1 align="center">MentorLoop</h1>
 
 <p align="center">
-  <b>1:1 mentoring and booking SaaS</b>. Clients book resume reviews, career guidance and mock interviews; the mentor manages services, availability and bookings from a clean dashboard.
+  <b>1:1 mentoring and booking SaaS</b>. Clients book resume reviews, career strategy calls and mock interviews; the mentor manages services, availability and bookings from a clean dashboard.
 </p>
 
 <p align="center">
@@ -16,7 +16,7 @@
 - **Booking in 3 steps** (service → time → details) with **no double booking**, even when two people click the same slot at the same moment.
 - **Mentor dashboard:** live countdown to the next session, pending requests with one-click confirm/decline, availability planner and service editor.
 - **Responsive:** sidebar on desktop, bottom tab bar on phone and tablet, bottom-sheet dialogs on mobile.
-- **Polished UI:** light/dark theme, heartbeat "live" indicators, cursor-following glow, tilt cards, skeleton loaders, toasts. Respects `prefers-reduced-motion`.
+- **Polished UI:** light/dark theme, live weekly-availability chart, pulsing "live" indicators, cursor-following glow, tilt cards, skeleton loaders, toasts. Respects `prefers-reduced-motion`.
 - **Demo mode:** "Try as client" / "Try as mentor" buttons log visitors straight into seeded accounts.
 
 | Client dashboard                                   | Booking flow                                   |
@@ -126,7 +126,7 @@ Set these in `.env` before deploying:
 
 - `DEMO_MODE=false`: removes the demo buttons and endpoint.
 - `JWT_SECRET`: a long random string (`openssl rand -base64 48`).
-- `ADMIN_EMAIL` / `ADMIN_PASSWORD`: your mentor account, created on first start.
+- `ADMIN_NAME` / `ADMIN_EMAIL` / `ADMIN_PASSWORD`: your mentor account, created on first start.
 - `POSTGRES_PASSWORD`: a strong value.
 - Serve over **HTTPS** (e.g. Caddy or a cloud load balancer in front of the `web` container).
 

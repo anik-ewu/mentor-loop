@@ -5,80 +5,124 @@ import { slotsApi } from '../api/slots';
 import { DemoButtons } from '../auth/DemoButtons';
 import { homeFor, useAuth } from '../auth/AuthContext';
 import { ButtonLink } from '../components/Button';
-import { HeartbeatLine } from '../components/HeartbeatLine';
 import { ArrowRightIcon } from '../components/icons';
 import { CursorGlow, Reveal, TiltCard } from '../components/Interactive';
 import { PulseDot } from '../components/PulseDot';
-import { Avatar, Skeleton } from '../components/ui';
-import { formatDay, formatTime } from '../lib/format';
+import { Skeleton } from '../components/ui';
+import { dayKey, formatDay, formatTime, groupByDay } from '../lib/format';
 import s from './Landing.module.css';
 
 const SERVICE_ICONS = ['📄', '🧭', '🎯', '💡', '🚀'];
 
 const STEPS = [
-  { title: 'Pick a session', text: 'Choose a resume review, career guidance or a mock interview.' },
   {
-    title: 'Choose a time',
-    text: 'See live availability and grab the slot that suits you. No back-and-forth emails.',
+    title: 'Choose a session',
+    text: 'Resume review, career strategy or interview practice. Each one has a clear focus and length.',
   },
   {
-    title: 'Meet and grow',
-    text: 'Get honest, practical feedback and a clear action plan you can use the same day.',
+    title: 'Pick a time',
+    text: 'See live availability and book the slot that suits you. No back-and-forth emails.',
+  },
+  {
+    title: 'Get your plan',
+    text: 'Meet over video, get honest feedback, and leave with next steps you can act on right away.',
   },
 ];
 
 const FAQ = [
   {
-    q: 'Who is this for?',
-    a: 'Students, fresh graduates and working engineers who want a sharper CV, a clear career plan or interview practice from someone who does the job every day.',
+    q: 'Who is MentorLoop for?',
+    a: 'Students, graduates and working professionals who want a stronger CV, a clearer career direction, or practice before an important interview.',
   },
   {
-    q: 'How do sessions happen?',
-    a: 'Online, 1:1 over a video call. You get the meeting link once your booking is confirmed.',
+    q: 'How do sessions work?',
+    a: 'Sessions are 1:1 over video. Once your booking is confirmed, your mentor shares the call details and you can see everything in your dashboard.',
   },
   {
     q: 'Can I cancel or reschedule?',
-    a: 'Yes. Cancel from "My sessions" any time before it starts. The slot opens up again for someone else, and you can book a new time.',
+    a: 'Yes. Cancel from "My sessions" any time before the session starts, then book a new time that suits you better.',
+  },
+  {
+    q: 'Do I need an account?',
+    a: 'Yes, a free account keeps all your bookings in one place. Sign up with email or Google in a few seconds.',
   },
   {
     q: 'What should I prepare?',
-    a: 'Add a link to your CV and a short note about your goals when you book. The more context, the more useful the session.',
+    a: 'Add a link to your CV and a short note about your goals when you book. The more context you share, the more useful the session.',
   },
 ];
 
-function AvailabilityPreview() {
+const WEEK_DAYS = 7;
+
+/** Live card: open slots per day for the next 7 days, plus the next few times. */
+function WeekAvailability() {
   const { data: slots, isPending } = useQuery({
     queryKey: ['slots', 'open'],
     queryFn: slotsApi.listOpen,
   });
+
+  const perDay = groupByDay(slots ?? [], (sl) => sl.startsAt);
+  const days = Array.from({ length: WEEK_DAYS }, (_, i) => {
+    const date = new Date();
+    date.setDate(date.getDate() + i);
+    return { date, count: perDay.get(dayKey(date))?.length ?? 0 };
+  });
+  const max = Math.max(1, ...days.map((d) => d.count));
+  const weekTotal = days.reduce((sum, d) => sum + d.count, 0);
   const next = slots?.slice(0, 3) ?? [];
 
   return (
     <div className={s.preview}>
       <div className={s.previewCard}>
         <div className={s.previewHead}>
-          <Avatar name="Sabbir Hasan" size={44} />
           <div>
-            <strong>Sabbir Hasan</strong>
-            <span className="subtle">Software Engineer · .NET · AI</span>
+            <strong>This week</strong>
+            <span className="subtle">Open times, updated live</span>
           </div>
           <span className={s.liveTag}>
-            <PulseDot size={8} /> LIVE
+            <PulseDot size={8} /> Live
           </span>
         </div>
-        <div className={s.ecg}>
-          <HeartbeatLine />
+
+        <div
+          className={s.week}
+          role="img"
+          aria-label={`${weekTotal} open slots in the next 7 days`}
+        >
+          {days.map(({ date, count }, i) => (
+            <div key={i} className={s.weekDay} title={`${count} open`}>
+              <div className={s.barTrack}>
+                {!isPending && (
+                  <div
+                    className={`${s.bar} ${count === 0 ? s.barEmpty : ''}`}
+                    style={{
+                      height: `${count ? Math.max(18, (count / max) * 100) : 6}%`,
+                      animationDelay: `${300 + i * 70}ms`,
+                    }}
+                  />
+                )}
+              </div>
+              <span className={i === 0 ? s.today : undefined}>
+                {i === 0 ? 'Today' : date.toLocaleDateString(undefined, { weekday: 'short' })}
+              </span>
+            </div>
+          ))}
         </div>
+
         <p className="subtle" style={{ marginBottom: 8 }}>
           Next available
         </p>
         <div className={s.slotList}>
           {isPending && [0, 1, 2].map((i) => <Skeleton key={i} height={46} />)}
           {!isPending && next.length === 0 && (
-            <p className="muted">New slots are added every week.</p>
+            <p className="muted">New times are added every week.</p>
           )}
           {next.map((slot, i) => (
-            <div key={slot.id} className={s.slotItem} style={{ animationDelay: `${i * 90}ms` }}>
+            <div
+              key={slot.id}
+              className={s.slotItem}
+              style={{ animationDelay: `${700 + i * 90}ms` }}
+            >
               <strong>{formatDay(slot.startsAt)}</strong>
               <span>{formatTime(slot.startsAt)}</span>
             </div>
@@ -86,7 +130,7 @@ function AvailabilityPreview() {
         </div>
       </div>
       <div className={s.floatBadge}>
-        <b>✓</b> {slots ? `${slots.length} open slots` : 'Checking slots…'}
+        <b>✓</b> {slots ? `${slots.length} open slots` : 'Checking times…'}
       </div>
     </div>
   );
@@ -107,15 +151,14 @@ export function Landing() {
         <div className={`container ${s.heroGrid}`}>
           <div className="animate-in">
             <span className={s.eyebrow}>
-              <PulseDot size={8} /> Taking bookings this week
+              <PulseDot size={8} /> Now booking 1:1 sessions
             </span>
             <h1 className={s.title}>
-              Land your next tech role with a{' '}
-              <span className="gradient-text">mentor in your corner</span>
+              Career mentoring that <span className="gradient-text">moves you forward</span>
             </h1>
             <p className={s.lead}>
-              1:1 resume reviews, career guidance and mock interviews with a working software
-              engineer. Honest feedback, practical next steps, booked in under a minute.
+              Book a 1:1 session for a resume review, a career strategy call or a mock interview.
+              Pick a time that suits you, share your goals, and leave with a clear plan.
             </p>
             <div className={s.ctas}>
               <ButtonLink to={bookTo} variant="primary" size="lg">
@@ -131,13 +174,13 @@ export function Landing() {
               </div>
             )}
             <div className={s.trust}>
-              <span>Enterprise .NET & Angular experience</span>
+              <span>1:1 video sessions</span>
               <span>Free cancellation</span>
-              <span>Mobile friendly</span>
+              <span>Book in under a minute</span>
             </div>
           </div>
           <div className="animate-in" style={{ animationDelay: '150ms' }}>
-            <AvailabilityPreview />
+            <WeekAvailability />
           </div>
         </div>
       </CursorGlow>
@@ -145,8 +188,8 @@ export function Landing() {
       <section id="services" className={`container ${s.section}`}>
         <Reveal className={s.sectionHead}>
           <span className={s.kicker}>Services</span>
-          <h2>Focused sessions, real outcomes</h2>
-          <p>Every session is 1:1 and tailored to where you are in your career.</p>
+          <h2>Pick the session you need</h2>
+          <p>Every session is 1:1, focused on your goals, and ends with concrete next steps.</p>
         </Reveal>
         <div className={s.services}>
           {services.isPending &&
@@ -174,7 +217,7 @@ export function Landing() {
       <section id="how" className={`container ${s.section}`}>
         <Reveal className={s.sectionHead}>
           <span className={s.kicker}>How it works</span>
-          <h2>Three steps, zero friction</h2>
+          <h2>From booking to plan in three steps</h2>
         </Reveal>
         <div className={s.steps}>
           {STEPS.map((step, i) => (
@@ -204,14 +247,14 @@ export function Landing() {
 
       <div className="container">
         <Reveal className={s.cta}>
-          <h2>Ready to move your career forward?</h2>
-          <p>Pick a time that works for you. It takes less than a minute.</p>
+          <h2>Ready for your next step?</h2>
+          <p>Choose a time that works for you. Booking takes less than a minute.</p>
           <ButtonLink to={bookTo} variant="light" size="lg">
             Book your session <ArrowRightIcon />
           </ButtonLink>
-          <div className={s.ctaLine}>
-            <HeartbeatLine stretch />
-          </div>
+          <span className={`${s.orb} ${s.orbA}`} aria-hidden />
+          <span className={`${s.orb} ${s.orbB}`} aria-hidden />
+          <span className={`${s.orb} ${s.orbC}`} aria-hidden />
         </Reveal>
       </div>
     </>

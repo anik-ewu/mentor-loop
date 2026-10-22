@@ -141,15 +141,17 @@
 .previewHead {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: var(--space-3);
 }
 
 .previewHead strong {
   display: block;
+  font-family: var(--font-display);
+  font-size: 17px;
 }
 
 .liveTag {
-  margin-left: auto;
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -158,8 +160,88 @@
   color: var(--live);
 }
 
-.ecg {
+.week {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
   margin: var(--space-5) 0;
+  padding: var(--space-3) var(--space-3) var(--space-2);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  overflow: hidden;
+}
+
+/* A soft light sweeping across the bars */
+.week::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(100deg, transparent 30%, var(--shine) 50%, transparent 70%);
+  transform: translateX(-100%);
+  animation: sweep 4.5s 1.4s ease-in-out infinite;
+}
+
+.weekDay {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.weekDay span {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-subtle);
+}
+
+.weekDay .today {
+  color: var(--brand);
+}
+
+.barTrack {
+  display: flex;
+  align-items: flex-end;
+  width: 100%;
+  height: 84px;
+}
+
+.bar {
+  width: 100%;
+  border-radius: 6px 6px 3px 3px;
+  background: var(--brand-gradient);
+  background-size: 100% 300%;
+  transform-origin: bottom;
+  animation: grow 0.7s var(--ease-spring) both;
+  transition:
+    filter 0.2s,
+    transform 0.2s var(--ease-out);
+}
+
+.weekDay:hover .bar {
+  filter: brightness(1.12);
+  transform: scaleY(1.04);
+}
+
+.barEmpty {
+  background: var(--border-strong);
+}
+
+@keyframes grow {
+  from {
+    transform: scaleY(0);
+  }
+}
+
+@keyframes sweep {
+  0% {
+    transform: translateX(-100%);
+  }
+  45%,
+  100% {
+    transform: translateX(100%);
+  }
 }
 
 .slotList {
@@ -441,14 +523,49 @@
   margin-bottom: var(--space-5);
 }
 
-.ctaLine {
+.cta > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Floating soft circles behind the CTA content */
+.orb {
   position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 12px;
-  height: 48px;
-  opacity: 0.3;
+  z-index: 0;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 0.12);
   pointer-events: none;
+  animation: orbit 12s ease-in-out infinite alternate;
+}
+
+.orbA {
+  width: 220px;
+  height: 220px;
+  top: -80px;
+  left: -60px;
+}
+
+.orbB {
+  width: 140px;
+  height: 140px;
+  bottom: -50px;
+  right: 12%;
+  animation-delay: -4s;
+}
+
+.orbC {
+  width: 60px;
+  height: 60px;
+  top: 30px;
+  right: 6%;
+  background: rgb(255 255 255 / 0.18);
+  animation-duration: 8s;
+}
+
+@keyframes orbit {
+  to {
+    transform: translate(24px, 18px) scale(1.08);
+  }
 }
 
 @keyframes fade-up {

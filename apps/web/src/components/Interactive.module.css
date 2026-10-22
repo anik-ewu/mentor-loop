@@ -1,0 +1,57 @@
+/* Cursor-following glow: --x/--y are set from JS, the gradient follows smoothly. */
+.glow {
+  position: relative;
+  isolation: isolate;
+}
+
+.glow::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(
+    600px circle at var(--x, 50%) var(--y, 30%),
+    rgb(143 76 242 / 0.16),
+    transparent 60%
+  );
+  transition: background 0.1s;
+}
+
+/* Tilt card: rotates toward the cursor with a moving spotlight. */
+.tilt {
+  position: relative;
+  transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg))
+    translateY(var(--lift, 0));
+  transition:
+    transform 0.35s var(--ease-out),
+    box-shadow 0.35s var(--ease-out);
+  will-change: transform;
+}
+
+.tilt:hover {
+  --lift: -4px;
+  box-shadow: var(--shadow-lg);
+  transition:
+    transform 0.08s linear,
+    box-shadow 0.35s var(--ease-out);
+}
+
+.tilt::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(
+    380px circle at var(--mx, 50%) var(--my, 50%),
+    rgb(139 125 255 / 0.14),
+    transparent 55%
+  );
+  transition: opacity 0.3s;
+}
+
+.tilt:hover::after {
+  opacity: 1;
+}

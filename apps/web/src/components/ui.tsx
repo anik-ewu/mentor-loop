@@ -74,9 +74,9 @@ export function Logo({ to = '/' }: { to?: string }) {
   );
 }
 
-type Theme = 'light' | 'dark';
+export type Theme = 'light' | 'dark';
 
-const currentTheme = (): Theme =>
+export const currentTheme = (): Theme =>
   (document.documentElement.dataset.theme as Theme | undefined) ??
   (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
 

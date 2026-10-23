@@ -1,6 +1,7 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { authApi } from '../api/auth';
 import type { User } from '../api/types';
+import { currentTheme, type Theme } from '../components/ui';
 import { useAuth } from './AuthContext';
 
 declare global {
@@ -33,6 +34,23 @@ function loadGoogleScript() {
   });
 }
 
+/** Follows the theme toggle (data-theme) and the OS setting, so the button can be redrawn to match. */
+function useTheme() {
+  const [theme, setTheme] = useState<Theme>(currentTheme);
+  useEffect(() => {
+    const update = () => setTheme(currentTheme());
+    const observer = new MutationObserver(update);
+    observer.observe(document.documentElement, { attributeFilter: ['data-theme'] });
+    const media = window.matchMedia('(prefers-color-scheme: dark)');
+    media.addEventListener('change', update);
+    return () => {
+      observer.disconnect();
+      media.removeEventListener('change', update);
+    };
+  }, []);
+  return theme;
+}
+
 /** "Continue with Google". Renders nothing when Google sign-in is not configured. */
 export function GoogleButton({
   onSuccess,
@@ -44,6 +62,7 @@ export function GoogleButton({
   const { config } = useAuth();
   const ref = useRef<HTMLDivElement>(null);
   const clientId = config.googleClientId;
+  const theme = useTheme();
 
   useEffect(() => {
     if (!clientId) return;
@@ -56,8 +75,9 @@ export function GoogleButton({
           callback: ({ credential }) =>
             authApi.google(credential).then(onSuccess, (e: Error) => onError(e.message)),
         });
+        ref.current.replaceChildren();
         window.google.accounts.id.renderButton(ref.current, {
-          theme: document.documentElement.dataset.theme === 'dark' ? 'filled_black' : 'outline',
+          theme: theme === 'dark' ? 'filled_black' : 'outline',
           size: 'large',
           shape: 'pill',
           text: 'continue_with',
@@ -68,8 +88,15 @@ export function GoogleButton({
     return () => {
       cancelled = true;
     };
-  }, [clientId, onSuccess, onError]);
+  }, [clientId, theme, onSuccess, onError]);
 
   if (!clientId) return null;
-  return <div ref={ref} style={{ minHeight: 44, display: 'flex', justifyContent: 'center' }} />;
+  // Google's button is an iframe with a light color scheme. In a dark page the browser paints a
+  // mismatched iframe with an opaque white backdrop, so keep its container light to stay transparent.
+  return (
+    <div
+      ref={ref}
+      style={{ minHeight: 44, display: 'flex', justifyContent: 'center', colorScheme: 'light' }}
+    />
+  );
 }

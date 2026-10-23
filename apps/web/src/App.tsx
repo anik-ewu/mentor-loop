@@ -8,6 +8,7 @@ import { Overview } from './pages/admin/Overview';
 import { Services } from './pages/admin/Services';
 import { AuthPage } from './pages/AuthPage';
 import { Landing } from './pages/Landing';
+import { Privacy, Terms } from './pages/Legal';
 import { NotFound } from './pages/NotFound';
 import { Book } from './pages/user/Book';
 import { MyBookings } from './pages/user/MyBookings';
@@ -20,6 +21,8 @@ export function App() {
         <Route index element={<Landing />} />
         <Route path="login" element={<AuthPage mode="login" />} />
         <Route path="signup" element={<AuthPage mode="signup" />} />
+        <Route path="privacy" element={<Privacy />} />
+        <Route path="terms" element={<Terms />} />
         <Route path="*" element={<NotFound />} />
       </Route>
 

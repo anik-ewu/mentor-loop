@@ -61,6 +61,8 @@ export function PublicLayout() {
             <Link to="/#services">Services</Link>
             <Link to="/#how">How it works</Link>
             <Link to="/#faq">FAQ</Link>
+            <Link to="/privacy">Privacy</Link>
+            <Link to="/terms">Terms</Link>
             {!user && <Link to="/login">Log in</Link>}
           </nav>
         </div>

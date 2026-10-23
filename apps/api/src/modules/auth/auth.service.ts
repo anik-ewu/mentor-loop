@@ -59,7 +59,7 @@ export async function loginWithGoogle(credential: string) {
   });
 }
 
-const DEMO_NAMES = { user: 'Demo User', admin: 'Demo Mentor' } as const;
+const DEMO_NAMES = { user: 'Demo User', admin: 'Demo Admin' } as const;
 
 /**
  * Created on first use, so demo mode works when ADMIN_EMAIL is a real address and the seed did

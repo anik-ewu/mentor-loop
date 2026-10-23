@@ -21,6 +21,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     queryKey: ['auth-config'],
     queryFn: authApi.config,
     staleTime: Infinity,
+    // A free-tier API can take a minute to wake up: keep trying (1, 2, 4, 8, 10, 10 s) instead of
+    // settling on "no Google, no demo" for the rest of the visit.
+    retry: 6,
+    retryDelay: (n) => Math.min(1000 * 2 ** n, 10_000),
   });
 
   const setUser = useCallback(

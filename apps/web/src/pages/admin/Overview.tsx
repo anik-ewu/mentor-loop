@@ -4,12 +4,13 @@ import { useAuth } from '../../auth/AuthContext';
 import { BookingCard } from '../../components/BookingCard';
 import { ButtonLink } from '../../components/Button';
 import { PulseDot } from '../../components/PulseDot';
-import { CountUp, Countdown, EmptyState, Skeleton } from '../../components/ui';
+import { Countdown, CountUp, EmptyState, Skeleton, usePageTitle } from '../../components/ui';
 import { formatLongDay, formatRange } from '../../lib/format';
 import { BookingActions } from './BookingActions';
 import s from '../dashboard.module.css';
 
 export function Overview() {
+  usePageTitle('Overview');
   const { user } = useAuth();
   const stats = useQuery({ queryKey: ['stats'], queryFn: bookingsApi.stats });
   const pending = useQuery({
@@ -30,7 +31,7 @@ export function Overview() {
       <div className="page-header">
         <div>
           <h1>Welcome back, {user?.name.split(' ')[0]}</h1>
-          <p>Your mentoring business at a glance.</p>
+          <p>Bookings, availability and clients at a glance.</p>
         </div>
         <ButtonLink to="/admin/slots" variant="primary">
           Add availability

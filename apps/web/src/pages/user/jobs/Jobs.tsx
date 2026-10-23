@@ -5,7 +5,7 @@ import { jobsApi } from '../../../api/jobs';
 import type { JobSort, JobStatus } from '../../../api/types';
 import { Button } from '../../../components/Button';
 import { PlusIcon } from '../../../components/icons';
-import { CountUp, EmptyState, Skeleton } from '../../../components/ui';
+import { CountUp, EmptyState, Skeleton, usePageTitle } from '../../../components/ui';
 import { AddJobModal } from './AddJobModal';
 import { Board } from './Board';
 import { JobTable } from './JobTable';
@@ -36,6 +36,7 @@ function initialView(): View {
 }
 
 export function Jobs() {
+  usePageTitle('Jobs');
   const [params] = useSearchParams();
   const navigate = useNavigate();
   const [view, setView] = useState<View>(initialView);

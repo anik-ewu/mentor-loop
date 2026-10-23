@@ -1,9 +1,11 @@
 import s from './Legal.module.css';
+import { usePageTitle } from '../components/ui';
 
 const UPDATED = 'October 23, 2026';
 
 /** Linked from the footer and from the Google OAuth consent screen (Branding page). */
 export function Privacy() {
+  usePageTitle('Privacy');
   return (
     <article className={`container ${s.page}`}>
       <h1>Privacy Policy</h1>
@@ -69,6 +71,7 @@ export function Privacy() {
 }
 
 export function Terms() {
+  usePageTitle('Terms');
   return (
     <article className={`container ${s.page}`}>
       <h1>Terms of Service</h1>

@@ -4,7 +4,7 @@ import { aiApi } from '../../../api/ai';
 import type { AiKind } from '../../../api/types';
 import { useAuth } from '../../../auth/AuthContext';
 import { ButtonLink } from '../../../components/Button';
-import { EmptyState, Skeleton } from '../../../components/ui';
+import { EmptyState, Skeleton, usePageTitle } from '../../../components/ui';
 import { GenerateForm } from './GenerateForm';
 import { ReviewForm } from './ReviewForm';
 import { RunHistory } from './RunHistory';
@@ -33,6 +33,7 @@ const TABS: { kind: AiKind; label: string; title: string; empty: string }[] = [
 ];
 
 export function AiCoach() {
+  usePageTitle('AI Coach');
   const { config } = useAuth();
   const navigate = useNavigate();
   // The tab lives in the URL so review results can link straight to a prefilled form.

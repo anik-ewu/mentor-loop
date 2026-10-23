@@ -184,3 +184,13 @@ Existing patterns to reuse:
   - Set goals and see progress and streaks update.
   - Book a Deep-Dive from a review and check that the admin booking card shows the summary.
 - Make one real Claude call if `ANTHROPIC_API_KEY` is available; otherwise say that only the mocked path was tested.
+
+## Backlog: auth hardening
+
+Found in the October 2026 code review and parked for a later pass:
+
+- **High: account pre-hijack through Google linking.** Signup doesn't verify emails, so anyone can create a password account with someone else's address. When the real owner later signs in with Google, `loginWithGoogle` (`apps/api/src/modules/auth/auth.service.ts`) links Google to that account, and the attacker's password keeps working. Fix: when linking Google to an account whose email was never verified, clear its `passwordHash` (or add email verification).
+- **Long-lived, unrevocable sessions.** The cookie is a 7-day JWT that carries the role: a role change or a ban only applies once it expires, and logout just clears the cookie. Replace it with DB-backed sessions (random cookie ID, hashed in a `Session` table, idle and absolute expiry), so logout, "sign out everywhere" and role changes take effect at once.
+- **Rate limits only on `/api/auth`.** Add a general limiter for the rest of the API (the AI polling endpoints included).
+- **No security headers on the web app.** Vercel serves it without CSP, `X-Frame-Options` or `Referrer-Policy`: add them in `apps/web/vercel.json` (allowing `accounts.google.com` for sign-in).
+- **Minor quota race.** Two parallel AI requests can both pass the daily count before either run is created. Fine at today's limits.

@@ -6,6 +6,7 @@ import { AdminBookings } from './pages/admin/AdminBookings';
 import { Availability } from './pages/admin/Availability';
 import { Overview } from './pages/admin/Overview';
 import { Services } from './pages/admin/Services';
+import { Usage } from './pages/admin/Usage';
 import { AuthPage } from './pages/AuthPage';
 import { Landing } from './pages/Landing';
 import { Privacy, Terms } from './pages/Legal';
@@ -59,6 +60,7 @@ export function App() {
         <Route path="bookings" element={<AdminBookings />} />
         <Route path="slots" element={<Availability />} />
         <Route path="services" element={<Services />} />
+        <Route path="usage" element={<Usage />} />
       </Route>
     </Routes>
   );

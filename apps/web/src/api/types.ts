@@ -269,3 +269,39 @@ export interface GoalWeek {
   goals: GoalProgress[];
   allMet: boolean;
 }
+
+type UsageUser = Pick<User, 'id' | 'name' | 'email'> | null;
+
+/** Admin view of AI tokens, cost, failures and limit hits. */
+export interface AiUsage {
+  days: number;
+  model: string;
+  month: { costUsd: number; budgetUsd: number };
+  totals: {
+    runs: number;
+    done: number;
+    failed: number;
+    processing: number;
+    inputTokens: number;
+    outputTokens: number;
+    costUsd: number;
+  };
+  byDay: { day: string; runs: number; costUsd: number }[];
+  byKind: {
+    kind: AiKind;
+    runs: number;
+    inputTokens: number;
+    outputTokens: number;
+    costUsd: number;
+  }[];
+  topUsers: { user: UsageUser; runs: number; costUsd: number }[];
+  recentFailures: {
+    id: string;
+    kind: AiKind;
+    error: string | null;
+    costUsd: number;
+    createdAt: string;
+    user: UsageUser;
+  }[];
+  limitHits: { daily: number; budget: number; topUsers: { user: UsageUser; hits: number }[] };
+}

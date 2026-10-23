@@ -10,6 +10,7 @@ import { formatDay } from '../../../lib/format';
 import { RunView } from './RunView';
 import { runTitle } from './RunHistory';
 import { usePollRun } from './usePollRun';
+import { usePageTitle } from '../../../components/ui';
 
 const HEADING = {
   resume_review: 'Resume review',
@@ -19,6 +20,7 @@ const HEADING = {
 
 /** /app/ai/:runId: one AI result, polled until it is ready. */
 export function RunPage() {
+  usePageTitle('AI result');
   const { runId } = useParams() as { runId: string };
   const navigate = useNavigate();
   const qc = useQueryClient();

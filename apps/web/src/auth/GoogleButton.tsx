@@ -23,16 +23,27 @@ declare global {
 
 const SCRIPT_SRC = 'https://accounts.google.com/gsi/client';
 
+/** Built into the bundle, so the button doesn't wait for a (possibly sleeping) API to wake up. */
+const BUILD_CLIENT_ID = (import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined) || null;
+
+let scriptPromise: Promise<void> | null = null;
+
+/** Adds Google's script once; a failed load is forgotten so the next mount can try again. */
 function loadGoogleScript() {
   if (window.google) return Promise.resolve();
-  return new Promise<void>((resolve, reject) => {
+  scriptPromise ??= new Promise<void>((resolve, reject) => {
     const script = document.createElement('script');
     script.src = SCRIPT_SRC;
     script.async = true;
     script.onload = () => resolve();
-    script.onerror = () => reject(new Error('Google script failed to load'));
+    script.onerror = () => {
+      script.remove();
+      scriptPromise = null;
+      reject(new Error('Google script failed to load'));
+    };
     document.head.appendChild(script);
   });
+  return scriptPromise;
 }
 
 /** Follows the theme toggle (data-theme) and the OS setting, so the button can be redrawn to match. */
@@ -60,9 +71,10 @@ const IN_APP_BROWSER = /FBAN|FBAV|Instagram|LinkedInApp|Line\/|; wv\)|GSA\/|Micr
 const isInAppBrowser = () => IN_APP_BROWSER.test(navigator.userAgent);
 
 /** How long Google gets to draw its button before we show the email fallback note. */
-const RENDER_TIMEOUT_MS = 3000;
+const RENDER_TIMEOUT_MS = 8000;
 
-type Status = 'loading' | 'ready' | 'in-app' | 'failed';
+/** `slow`: not drawn in time, but still watched, so a late button replaces the note. */
+type Status = 'loading' | 'ready' | 'slow' | 'in-app' | 'failed';
 
 function InAppHint() {
   const [copied, setCopied] = useState<boolean | null>(null);
@@ -108,7 +120,7 @@ export function GoogleButton({
 }) {
   const { config } = useAuth();
   const ref = useRef<HTMLDivElement>(null);
-  const clientId = config.googleClientId;
+  const clientId = BUILD_CLIENT_ID ?? config.googleClientId;
   const theme = useTheme();
   const [status, setStatus] = useState<Status>(() => (isInAppBrowser() ? 'in-app' : 'loading'));
   const unavailable = status === 'in-app' || status === 'failed';
@@ -117,25 +129,37 @@ export function GoogleButton({
     if (!clientId || unavailable) return;
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
+    let observer: MutationObserver | undefined;
     loadGoogleScript()
       .then(() => {
-        if (cancelled || !ref.current || !window.google) return;
+        const el = ref.current;
+        if (cancelled || !el || !window.google) return;
         window.google.accounts.id.initialize({
           client_id: clientId,
           callback: ({ credential }) =>
             authApi.google(credential).then(onSuccess, (e: Error) => onError(e.message)),
         });
-        ref.current.replaceChildren();
-        window.google.accounts.id.renderButton(ref.current, {
+        el.replaceChildren();
+        window.google.accounts.id.renderButton(el, {
           theme: theme === 'dark' ? 'filled_black' : 'outline',
           size: 'large',
           shape: 'pill',
           text: 'continue_with',
-          width: Math.min(ref.current.offsetWidth || 360, 400),
+          width: Math.min(el.offsetWidth || 360, 400),
         });
+        const drawn = () => {
+          if (!el.childElementCount) return false;
+          setStatus('ready');
+          observer?.disconnect();
+          clearTimeout(timer);
+          return true;
+        };
+        if (drawn()) return;
+        observer = new MutationObserver(drawn);
+        observer.observe(el, { childList: true });
         // Blockers and some browsers let the script load but never draw the button.
         timer = setTimeout(() => {
-          if (!cancelled) setStatus(ref.current?.childElementCount ? 'ready' : 'failed');
+          if (!cancelled) setStatus((st) => (st === 'ready' ? st : 'slow'));
         }, RENDER_TIMEOUT_MS);
       })
       .catch(() => {
@@ -144,6 +168,7 @@ export function GoogleButton({
     return () => {
       cancelled = true;
       clearTimeout(timer);
+      observer?.disconnect();
     };
   }, [clientId, theme, unavailable, onSuccess, onError]);
 
@@ -165,8 +190,16 @@ export function GoogleButton({
     <>
       <div
         ref={ref}
-        style={{ minHeight: 44, display: 'flex', justifyContent: 'center', colorScheme: 'light' }}
+        style={{
+          minHeight: status === 'slow' ? 0 : 44,
+          display: 'flex',
+          justifyContent: 'center',
+          colorScheme: 'light',
+        }}
       />
+      {status === 'slow' && (
+        <p className={s.failed}>Google sign-in is taking a while. You can still use email.</p>
+      )}
       {divider}
     </>
   );

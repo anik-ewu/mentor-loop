@@ -20,9 +20,7 @@ export function DemoButtons({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
     try {
       const user = await authApi.demo(role);
       setUser(user);
-      toast(
-        `Welcome! You're exploring as the demo ${role === 'admin' ? 'mentor (admin)' : 'client'}.`,
-      );
+      toast(`Welcome! You're exploring as the demo ${role === 'admin' ? 'admin' : 'client'}.`);
       navigate(homeFor(user));
     } catch (e) {
       toast((e as Error).message, 'error');
@@ -37,7 +35,7 @@ export function DemoButtons({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
         Try as client
       </Button>
       <Button size={size} onClick={() => tryAs('admin')} loading={pending === 'admin'}>
-        Try as mentor
+        Try as admin
       </Button>
     </div>
   );

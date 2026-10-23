@@ -9,7 +9,7 @@ import { GoogleButton } from '../auth/GoogleButton';
 import { Button } from '../components/Button';
 import { CursorGlow } from '../components/Interactive';
 import { useToast } from '../components/Toast';
-import { Field } from '../components/ui';
+import { Field, usePageTitle } from '../components/ui';
 import s from './Auth.module.css';
 
 type Mode = 'login' | 'signup';
@@ -40,6 +40,7 @@ export function AuthPage({ mode }: { mode: Mode }) {
 
   const from = (location.state as { from?: string } | null)?.from;
   const isSignup = mode === 'signup';
+  usePageTitle(isSignup ? 'Sign up' : 'Log in');
 
   const onAuthed = useCallback(
     (u: User) => {
@@ -90,8 +91,8 @@ export function AuthPage({ mode }: { mode: Mode }) {
         <h1>{isSignup ? 'Create your account' : 'Welcome back'}</h1>
         <p className={s.sub}>
           {isSignup
-            ? 'Book your first session in under a minute.'
-            : 'Log in to manage your sessions.'}
+            ? 'Track your job search, sharpen your resume and get help when you need it.'
+            : 'Log in to pick up your job search where you left off.'}
         </p>
 
         <GoogleButton

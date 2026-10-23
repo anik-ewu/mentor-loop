@@ -5,7 +5,7 @@ import { Button } from '../../components/Button';
 import { TrashIcon } from '../../components/icons';
 import { PulseDot } from '../../components/PulseDot';
 import { useToast } from '../../components/Toast';
-import { EmptyState, Skeleton } from '../../components/ui';
+import { EmptyState, Skeleton, usePageTitle } from '../../components/ui';
 import { dayKey, formatLongDay, formatRange, groupByDay } from '../../lib/format';
 import s from './admin.module.css';
 
@@ -33,6 +33,7 @@ const tomorrow = () => {
 };
 
 export function Availability() {
+  usePageTitle('Availability');
   const qc = useQueryClient();
   const toast = useToast();
   const [date, setDate] = useState(tomorrow);

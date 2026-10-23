@@ -3,8 +3,39 @@ import { zodOutputFormat } from '@anthropic-ai/sdk/helpers/zod';
 import type { z } from 'zod';
 import { env } from '../../config/env';
 
-/** A failure whose message is safe to show the user as is. */
-export class AiFailure extends Error {}
+/** Tokens one call used, and what they cost in millionths of a US dollar. */
+export interface AiUsage {
+  inputTokens: number;
+  outputTokens: number;
+  costMicros: number;
+}
+
+/**
+ * A failure whose message is safe to show the user as is. `usage` is set when the model answered
+ * (refusal, cut off, unreadable output): those tokens were still paid for.
+ */
+export class AiFailure extends Error {
+  constructor(
+    message: string,
+    public readonly usage?: AiUsage,
+  ) {
+    super(message);
+  }
+}
+
+/** Prices are per million tokens, so tokens × price is already in micro-dollars. */
+function toUsage(u: Anthropic.Usage): AiUsage {
+  const inputTokens =
+    u.input_tokens + (u.cache_creation_input_tokens ?? 0) + (u.cache_read_input_tokens ?? 0);
+  const outputTokens = u.output_tokens;
+  return {
+    inputTokens,
+    outputTokens,
+    costMicros: Math.round(
+      inputTokens * env.AI_PRICE_INPUT_PER_MTOK + outputTokens * env.AI_PRICE_OUTPUT_PER_MTOK,
+    ),
+  };
+}
 
 let client: Anthropic | null = null;
 
@@ -33,15 +64,15 @@ interface CallOptions<T extends z.ZodType> {
 }
 
 /**
- * One structured call to Claude. Returns the parsed, schema-checked output or throws
- * AiFailure with a message the user can read; raw API errors never leave this function.
+ * One structured call to Claude. Returns the parsed, schema-checked output with its token usage,
+ * or throws AiFailure with a message the user can read; raw API errors never leave this function.
  */
 export async function callStructured<T extends z.ZodType>({
   system,
   content,
   schema,
   maxTokens = 16_000,
-}: CallOptions<T>): Promise<z.infer<T>> {
+}: CallOptions<T>): Promise<{ output: z.infer<T>; usage: AiUsage }> {
   let response;
   try {
     response = await getClient().messages.parse({
@@ -55,18 +86,23 @@ export async function callStructured<T extends z.ZodType>({
     throw toAiFailure(err);
   }
 
+  const usage = toUsage(response.usage);
   if (response.stop_reason === 'refusal') {
     throw new AiFailure(
       "The AI couldn't process this request. Check the file or text and try again.",
+      usage,
     );
   }
   if (response.stop_reason === 'max_tokens') {
-    throw new AiFailure('The AI response was cut off. Please try again with a shorter input.');
+    throw new AiFailure(
+      'The AI response was cut off. Please try again with a shorter input.',
+      usage,
+    );
   }
   if (response.parsed_output == null) {
-    throw new AiFailure('The AI returned an unexpected answer. Please try again.');
+    throw new AiFailure('The AI returned an unexpected answer. Please try again.', usage);
   }
-  return response.parsed_output;
+  return { output: response.parsed_output, usage };
 }
 
 function toAiFailure(err: unknown): Error {

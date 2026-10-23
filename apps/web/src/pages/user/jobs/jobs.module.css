@@ -262,10 +262,12 @@
   margin-top: var(--space-2);
   width: 100%;
   font-size: 12px;
-  padding: 4px 6px;
+  padding: 6px 30px 6px 10px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border);
-  background: var(--surface);
+  background-color: var(--surface);
+  background-position: right 10px center;
+  background-size: 14px;
 }
 
 .showClosed {
@@ -530,10 +532,12 @@
 
 .eventTools select {
   font-size: 12px;
-  padding: 2px 4px;
+  padding: 3px 24px 3px 8px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border);
-  background: var(--surface);
+  background-color: var(--surface);
+  background-position: right 6px center;
+  background-size: 12px;
 }
 
 .iconBtn {

@@ -8,6 +8,11 @@ A job-search toolkit with human mentoring built in: job tracker, AI coach (Claud
 - **Review before pushing to `dev`.** Before every `git push` to `dev`, run the `code-reviewer` agent on the unpushed changes (`git diff origin/dev...HEAD`, plus any uncommitted work). Fix real problems, tell the user what the review found, then push.
 - **Run the checks before pushing:** `npm run format:check && npm run lint && npm run typecheck`. Also run `npm test` when the API changed (it needs the `mentorloop_test` database).
 - **Ask before merging to `main`.** When a piece of work is finished and pushed to `dev`, ask the user whether to merge `dev` into `main`. Do it only after a clear yes, by opening a PR `dev` → `main`, never with a direct push. Pushing to `main` redeploys production (Render and Vercel).
+- **PR titles for `dev` → `main`** start with the type of the main change, then that change as a short title:
+  - `feat: Add forgot password for email and Google accounts` for a new feature or capability.
+  - `fix: Log out other sessions after a password reset` for a bug or security fix.
+  - When a PR holds several changes, title it after the biggest one and list the rest in the description.
+  - Merge with a merge commit, not a squash, so `dev` and `main` stay in step. Then fast-forward `dev` to `main`.
 - Commit messages: a short imperative subject that says what changed for the user, like the existing history ("Add weekly goals and streaks, …", "Don't count failed AI runs toward the daily limit").
 
 ## Commands

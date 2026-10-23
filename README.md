@@ -73,6 +73,7 @@ Also: email + password or Google sign-in, **no double booking**, a responsive da
 | `ADMIN_NAME` / `ADMIN_EMAIL` / `ADMIN_PASSWORD` | Mentor account created by the seed                        |
 | `GOOGLE_CLIENT_ID`                              | Optional; empty hides the Google button                   |
 | `ANTHROPIC_API_KEY`                             | Optional; empty turns the AI coach off                    |
+| `RESEND_API_KEY` / `EMAIL_FROM`                 | Password reset emails (see below)                         |
 | `ANTHROPIC_MODEL`                               | Default `claude-haiku-5-5`                                |
 | `AI_DAILY_LIMIT`                                | AI requests per user per 24 h (default `10`)              |
 | `AI_PRICE_INPUT_PER_MTOK` / `_OUTPUT_PER_MTOK`  | USD per million tokens (default Haiku 5.5: `0.1` / `0.5`) |
@@ -132,6 +133,10 @@ Key decisions:
 ## Google sign-in (optional)
 
 Google Cloud Console → Credentials → **OAuth client ID** (Web). Add the site URL (e.g. `https://mentor-loop-five.vercel.app`) to **Authorized JavaScript origins**, then set `GOOGLE_CLIENT_ID` on Render.
+
+## Password reset emails
+
+"Forgot password?" emails a one-hour, single-use link (only a SHA-256 of the token is stored). It is also how someone who signed up with Google adds a password. Emails go through [Resend](https://resend.com): create an API key and set `RESEND_API_KEY` on Render. `EMAIL_FROM` defaults to Resend's `onboarding@resend.dev` test sender, which can only deliver to your own Resend account email; verify a domain and set `EMAIL_FROM` (e.g. `MentorLoop <no-reply@yourdomain.com>`) to email anyone. With no key, the API prints the email, link included, to its log instead.
 
 ## AI coach (optional)
 

@@ -1,9 +1,10 @@
 import request from 'supertest';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { signToken } from '../src/lib/jwt';
 import { mailer } from '../src/lib/mailer';
 import { googleVerifier } from '../src/modules/auth/google';
 import { prisma } from '../src/lib/prisma';
-import { app, createUser, resetDb } from './helpers';
+import { app, createUser, loginAs, resetDb } from './helpers';
 
 beforeEach(resetDb);
 afterEach(() => vi.restoreAllMocks());
@@ -143,6 +144,42 @@ describe('auth', () => {
         .post('/api/auth/login')
         .send({ email: 'r@test.dev', password: 'password123' })
         .expect(401);
+    });
+
+    it('logs out existing sessions but keeps the one it starts', async () => {
+      const { agent: stolen, user } = await loginAs('user', 'hijacked@test.dev');
+      await stolen.get('/api/jobs').expect(200);
+      const token = await requestToken('hijacked@test.dev');
+
+      const owner = request.agent(app);
+      await owner
+        .post('/api/auth/reset-password')
+        .send({ token, password: 'new-password-1' })
+        .expect(200);
+
+      await stolen.get('/api/jobs').expect(401);
+      const me = await stolen.get('/api/auth/me').expect(200);
+      expect(me.body.user).toBeNull();
+
+      await owner.get('/api/jobs').expect(200);
+      const ownerMe = await owner.get('/api/auth/me').expect(200);
+      expect(ownerMe.body.user.id).toBe(user.id);
+    });
+
+    it('keeps sessions from before session versions existed', async () => {
+      const user = await createUser('user', 'legacy@test.dev');
+      const cookie = `ml_session=${signToken({ sub: user.id, role: user.role })}`;
+      await request(app).get('/api/jobs').set('Cookie', cookie).expect(200);
+    });
+
+    it('rejects a revoked session on admin routes too', async () => {
+      const { agent, user } = await loginAs('admin');
+      await agent.get('/api/slots/all').expect(200);
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { sessionVersion: { increment: 1 } },
+      });
+      await agent.get('/api/slots/all').expect(401);
     });
 
     it('rejects an expired token', async () => {

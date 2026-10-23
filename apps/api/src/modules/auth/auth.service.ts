@@ -116,6 +116,8 @@ export async function resetPassword({ token, password }: ResetPasswordInput) {
       passwordHash: await bcrypt.hash(password, 12),
       resetTokenHash: null,
       resetTokenExpires: null,
+      // Logs out every existing session; the caller starts a new one from the returned user.
+      sessionVersion: { increment: 1 },
     },
   });
   if (count !== 1) throw invalid();

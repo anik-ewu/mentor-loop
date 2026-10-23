@@ -41,7 +41,7 @@ const cookieOptions = (req: Request) =>
   ({ httpOnly: true, sameSite: 'lax', secure: req.secure, path: '/' }) as const;
 
 function startSession(req: Request, res: Response, user: User, status = 200) {
-  res.cookie(AUTH_COOKIE, signToken({ sub: user.id, role: user.role }), {
+  res.cookie(AUTH_COOKIE, signToken({ sub: user.id, role: user.role, ver: user.sessionVersion }), {
     ...cookieOptions(req),
     maxAge: SEVEN_DAYS_MS,
   });

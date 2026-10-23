@@ -33,6 +33,8 @@ model User {
   /// SHA-256 of the emailed reset token; the raw token is never stored.
   resetTokenHash    String?          @unique
   resetTokenExpires DateTime?
+  /// Carried in the session JWT; bumping it logs out every existing session.
+  sessionVersion    Int              @default(0)
   name              String
   avatarUrl         String?
   role              Role             @default(user)

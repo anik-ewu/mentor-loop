@@ -29,7 +29,7 @@ function passwordScore(pw: string) {
 }
 
 export function AuthPage({ mode }: { mode: Mode }) {
-  const { user, setUser } = useAuth();
+  const { user, setUser, config } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const toast = useToast();
@@ -150,7 +150,7 @@ export function AuthPage({ mode }: { mode: Mode }) {
                 ))}
               </div>
             )}
-            {!isSignup && (
+            {!isSignup && config.passwordResetEnabled && (
               <Link to="/forgot-password" className={s.forgot}>
                 Forgot password?
               </Link>

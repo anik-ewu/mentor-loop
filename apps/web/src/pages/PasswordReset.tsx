@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { authApi } from '../api/auth';
 import { ApiError } from '../api/client';
@@ -70,18 +70,22 @@ export function ForgotPassword() {
 }
 
 export function ResetPassword() {
-  const { user, setUser } = useAuth();
+  const { setUser } = useAuth();
   const navigate = useNavigate();
   const toast = useToast();
-  const [params] = useSearchParams();
-  const token = params.get('token') ?? '';
+  const [params, setParams] = useSearchParams();
+  // Read once, then dropped from the URL so the token doesn't sit in history or get shared.
+  const [token] = useState(() => params.get('token') ?? '');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string>();
   const [alert, setAlert] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
+  useEffect(() => {
+    if (params.has('token')) setParams({}, { replace: true });
+  }, [params, setParams]);
+
   if (!token) return <Navigate to="/forgot-password" replace />;
-  if (user && !submitting) return <Navigate to={homeFor(user)} replace />;
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -102,6 +106,7 @@ export function ResetPassword() {
 
   return (
     <CursorGlow className={s.wrap}>
+      <meta name="referrer" content="no-referrer" />
       <div className={s.card}>
         <h1>Choose a new password</h1>
         <p className={s.sub}>You'll be logged in right after.</p>

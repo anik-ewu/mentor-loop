@@ -158,6 +158,24 @@ describe('auth', () => {
         .expect(400);
     });
 
+    it('sends at most one email per address per minute', async () => {
+      await createUser('user', 'twice@test.dev');
+      const token = await requestToken('twice@test.dev');
+      const send = vi.spyOn(mailer, 'send').mockResolvedValue();
+      send.mockClear(); // same spy as requestToken's, which already saw the first email
+      await request(app)
+        .post('/api/auth/forgot-password')
+        .send({ email: 'twice@test.dev' })
+        .expect(204);
+      await new Promise((r) => setTimeout(r, 50));
+      expect(send).not.toHaveBeenCalled();
+      // The first link still works.
+      await request(app)
+        .post('/api/auth/reset-password')
+        .send({ token, password: 'new-password-1' })
+        .expect(200);
+    });
+
     it('answers the same for an unknown email and sends nothing', async () => {
       const send = vi.spyOn(mailer, 'send').mockResolvedValue();
       await request(app)

@@ -4,6 +4,7 @@ import type { User } from '@prisma/client';
 import { env } from '../../config/env';
 import { aiEnabled } from '../ai/claude';
 import { notFound } from '../../lib/errors';
+import { emailEnabled } from '../../lib/mailer';
 import { signToken } from '../../lib/jwt';
 import { AUTH_COOKIE, currentUserId, optionalAuth, requireAuth } from '../../middleware/auth';
 import { validateBody } from '../../middleware/validate';
@@ -23,6 +24,14 @@ const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 20,
+  skip: () => env.NODE_ENV === 'test',
+  message: { error: { code: 'RATE_LIMITED', message: 'Too many attempts, try again later' } },
+});
+
+/** Stricter than authLimiter: each request sends an email. */
+const forgotLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 5,
   skip: () => env.NODE_ENV === 'test',
   message: { error: { code: 'RATE_LIMITED', message: 'Too many attempts, try again later' } },
 });
@@ -47,6 +56,7 @@ authRouter.get('/config', (_req, res) => {
     googleClientId: env.GOOGLE_CLIENT_ID || null,
     demoMode: env.DEMO_MODE,
     aiEnabled: aiEnabled(),
+    passwordResetEnabled: emailEnabled(),
   });
 });
 
@@ -65,9 +75,10 @@ authRouter.post('/google', authLimiter, validateBody(googleSchema), async (req, 
 
 authRouter.post(
   '/forgot-password',
-  authLimiter,
+  forgotLimiter,
   validateBody(forgotPasswordSchema),
   async (req, res) => {
+    if (!emailEnabled()) throw notFound('Password reset');
     // Not awaited: an unknown email returning faster than a real one would reveal which exists.
     authService.requestPasswordReset(req.body.email).catch((err) => {
       console.error('Password reset email failed:', err);

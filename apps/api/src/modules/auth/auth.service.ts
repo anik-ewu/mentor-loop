@@ -63,6 +63,8 @@ export async function loginWithGoogle(credential: string) {
 }
 
 const RESET_TTL_MS = 60 * 60 * 1000;
+/** One email per address per minute, however many IPs ask. */
+const RESET_COOLDOWN_MS = 60 * 1000;
 const hashToken = (token: string) => createHash('sha256').update(token).digest('hex');
 
 /**
@@ -72,6 +74,9 @@ const hashToken = (token: string) => createHash('sha256').update(token).digest('
 export async function requestPasswordReset(email: string) {
   const user = await prisma.user.findUnique({ where: { email } });
   if (!user || (Object.values(DEMO_EMAILS) as string[]).includes(email)) return;
+  // The last token was issued at expires - TTL; a fresh one would also void the link just sent.
+  const issuedAt = user.resetTokenExpires && user.resetTokenExpires.getTime() - RESET_TTL_MS;
+  if (issuedAt && Date.now() - issuedAt < RESET_COOLDOWN_MS) return;
 
   const token = randomBytes(32).toString('base64url');
   await prisma.user.update({
@@ -99,18 +104,22 @@ export async function requestPasswordReset(email: string) {
 
 /** Sets the new password and uses up the token. Returns the user so the route can log them in. */
 export async function resetPassword({ token, password }: ResetPasswordInput) {
-  const user = await prisma.user.findUnique({ where: { resetTokenHash: hashToken(token) } });
-  if (!user?.resetTokenExpires || user.resetTokenExpires < new Date()) {
-    throw badRequest('This reset link is invalid or has expired. Request a new one.');
-  }
-  return prisma.user.update({
-    where: { id: user.id },
+  const invalid = () => badRequest('This reset link is invalid or has expired. Request a new one.');
+  const resetTokenHash = hashToken(token);
+  const user = await prisma.user.findUnique({ where: { resetTokenHash }, select: { id: true } });
+  if (!user) throw invalid();
+
+  // The token check is repeated in the WHERE, so two requests racing with one token can't both win.
+  const { count } = await prisma.user.updateMany({
+    where: { id: user.id, resetTokenHash, resetTokenExpires: { gt: new Date() } },
     data: {
       passwordHash: await bcrypt.hash(password, 12),
       resetTokenHash: null,
       resetTokenExpires: null,
     },
   });
+  if (count !== 1) throw invalid();
+  return prisma.user.findUniqueOrThrow({ where: { id: user.id } });
 }
 
 const DEMO_NAMES = { user: 'Demo User', admin: 'Demo Admin' } as const;

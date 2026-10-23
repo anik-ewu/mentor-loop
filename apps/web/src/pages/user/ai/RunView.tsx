@@ -1,6 +1,14 @@
 import type { ReactNode } from 'react';
-import type { AiKind, AiRun, ReviewResult as Review } from '../../../api/types';
+import type {
+  AiKind,
+  AiRun,
+  CoverLetterResult,
+  InterviewResult,
+  ReviewResult as Review,
+} from '../../../api/types';
 import { Skeleton } from '../../../components/ui';
+import { CoverLetterView } from './CoverLetterView';
+import { InterviewResultView } from './InterviewResultView';
 import { ReviewResult } from './ReviewResult';
 import { usePollRun } from './usePollRun';
 import s from './ai.module.css';
@@ -12,7 +20,16 @@ const WAITING: Record<AiKind, string> = {
 };
 
 /** Polls a run and shows its processing, failed or finished state. */
-export function RunView({ id, onRetry }: { id: string; onRetry?: ReactNode }) {
+export function RunView({
+  id,
+  onRetry,
+  onReplace,
+}: {
+  id: string;
+  onRetry?: ReactNode;
+  /** Called with the new run when the user regenerates (cover letters). */
+  onReplace?: (id: string) => void;
+}) {
   const { data: run, isPending, error } = usePollRun<unknown>(id);
 
   if (isPending) return <Skeleton height={240} style={{ borderRadius: 20 }} />;
@@ -41,7 +58,11 @@ export function RunView({ id, onRetry }: { id: string; onRetry?: ReactNode }) {
   switch (run.kind) {
     case 'resume_review':
       return <ReviewResult run={run as AiRun<Review>} />;
-    default:
-      return null;
+    case 'interview_questions':
+      return <InterviewResultView run={run as AiRun<InterviewResult>} />;
+    case 'cover_letter':
+      return (
+        <CoverLetterView key={run.id} run={run as AiRun<CoverLetterResult>} onReplace={onReplace} />
+      );
   }
 }

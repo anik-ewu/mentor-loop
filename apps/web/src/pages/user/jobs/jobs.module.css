@@ -51,7 +51,7 @@
   margin: var(--space-5) 0 var(--space-4);
 }
 
-.toolbar .input {
+.toolbar :global(.input) {
   width: auto;
   min-height: 40px;
   padding: 8px 12px;

@@ -419,3 +419,79 @@
 .stateFailed {
   color: var(--danger);
 }
+
+/* ---------- Interview prep ---------- */
+.round h3 {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.question {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.question summary {
+  display: flex;
+  gap: var(--space-3);
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  cursor: pointer;
+  list-style: none;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.question summary::-webkit-details-marker {
+  display: none;
+}
+
+.question summary::after {
+  content: '+';
+  color: var(--text-subtle);
+  font-size: 18px;
+  line-height: 1;
+}
+
+.question[open] summary::after {
+  content: '−';
+}
+
+.questionBody {
+  display: grid;
+  gap: var(--space-2);
+  padding: 0 var(--space-4) var(--space-4);
+  font-size: 14px;
+}
+
+.questionBody p {
+  color: var(--text-muted);
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+/* ---------- Cover letter ---------- */
+.letter {
+  min-height: 360px;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.letterTools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-2);
+}
+
+.letterTools :global(.field) {
+  min-width: 130px;
+}

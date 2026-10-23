@@ -4,7 +4,12 @@ import { badRequest } from '../../lib/errors';
 import { currentUserId, requireAuth } from '../../middleware/auth';
 import { validateBody } from '../../middleware/validate';
 import { aiDisabled } from './ai.runner';
-import { reviewRequestSchema, runListQuerySchema } from './ai.schema';
+import {
+  coverLetterRequestSchema,
+  interviewRequestSchema,
+  reviewRequestSchema,
+  runListQuerySchema,
+} from './ai.schema';
 import * as ai from './ai.service';
 import { aiEnabled } from './claude';
 
@@ -57,6 +62,24 @@ aiRouter.post(
   async (req, res) => {
     const run = await ai.createReview(actor(req), req.body, req.file);
     res.status(202).json({ run });
+  },
+);
+
+aiRouter.post(
+  '/interview-questions',
+  requireAi,
+  validateBody(interviewRequestSchema),
+  async (req, res) => {
+    res.status(202).json({ run: await ai.createInterviewQuestions(actor(req), req.body) });
+  },
+);
+
+aiRouter.post(
+  '/cover-letters',
+  requireAi,
+  validateBody(coverLetterRequestSchema),
+  async (req, res) => {
+    res.status(202).json({ run: await ai.createCoverLetter(actor(req), req.body) });
   },
 );
 

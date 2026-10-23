@@ -73,3 +73,61 @@ export const reviewOutputSchema = z.object({
 
 export type ReviewOutput = z.infer<typeof reviewOutputSchema>;
 export type Profile = z.infer<typeof profileSchema>;
+
+// ---------- Interview questions ----------
+
+export const interviewRequestSchema = z.object({
+  jobId: z.uuid(),
+  reviewId: z.preprocess((v) => (v === '' || v === null ? undefined : v), z.uuid().optional()),
+});
+
+export const INTERVIEW_CATEGORIES = [
+  'technical',
+  'system_design',
+  'behavioral',
+  'role_specific',
+  'company_culture',
+] as const;
+
+export const interviewOutputSchema = z.object({
+  rounds: z.array(
+    z.object({
+      category: z.enum(INTERVIEW_CATEGORIES),
+      questions: z.array(
+        z.object({
+          question: z.string(),
+          whyAsked: z.string().describe('What the interviewer wants to learn'),
+          answerPoints: z.array(z.string()).describe('3-5 points a strong answer covers'),
+          difficulty: z.enum(['easy', 'medium', 'hard']),
+          fromResume: z
+            .boolean()
+            .describe("True when the question is about the candidate's own project or job"),
+        }),
+      ),
+    }),
+  ),
+  questionsToAsk: z.array(z.string()).describe('Smart questions the candidate can ask them'),
+});
+
+export type InterviewRequest = z.infer<typeof interviewRequestSchema>;
+
+// ---------- Cover letter ----------
+
+export const coverLetterRequestSchema = z.object({
+  jobId: z.uuid(),
+  reviewId: z.uuid(),
+  tone: z.enum(['formal', 'friendly', 'concise']).default('formal'),
+  length: z.enum(['short', 'standard']).default('standard'),
+});
+
+export const coverLetterOutputSchema = z.object({
+  subject: z.string().describe('Email subject line'),
+  greeting: z.string().describe('e.g. "Dear Hiring Team,"'),
+  paragraphs: z.array(z.string()),
+  closing: z
+    .string()
+    .describe('Sign-off with the candidate name, e.g. "Best regards,\\nJordan Lee"'),
+  highlightsUsed: z.array(z.string()).describe('Which profile facts the letter relies on'),
+});
+
+export type CoverLetterRequest = z.infer<typeof coverLetterRequestSchema>;

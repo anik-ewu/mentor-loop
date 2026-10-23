@@ -155,6 +155,7 @@ const TEXT_FIELDS = [
   'contactEmail',
   'jobDescription',
   'notes',
+  'coverLetter',
 ] as const;
 
 function initialForm(job: Job) {
@@ -267,6 +268,11 @@ function DetailsForm({ job, onDelete }: { job: Job; onDelete: () => void }) {
         hint: 'Paste the posting. The AI tools use it to tailor your resume and prep.',
       })}
       {field('notes', 'Notes', { multiline: true, rows: 3 })}
+      {field('coverLetter', 'Cover letter', {
+        multiline: true,
+        rows: 6,
+        hint: 'Your final letter for this job. Draft one in the AI tab and save it here.',
+      })}
       {save.error && !Object.keys(errors).length && (
         <p className="field-error">{save.error.message}</p>
       )}

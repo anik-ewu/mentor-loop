@@ -210,3 +210,30 @@ export interface AiRunSummary {
 export interface AiRun<R = unknown> extends AiRunSummary {
   result: R | null;
 }
+
+export interface InterviewQuestion {
+  question: string;
+  whyAsked: string;
+  answerPoints: string[];
+  difficulty: 'easy' | 'medium' | 'hard';
+  fromResume: boolean;
+}
+
+export interface InterviewResult {
+  rounds: {
+    category: 'technical' | 'system_design' | 'behavioral' | 'role_specific' | 'company_culture';
+    questions: InterviewQuestion[];
+  }[];
+  questionsToAsk: string[];
+}
+
+export type LetterTone = 'formal' | 'friendly' | 'concise';
+export type LetterLength = 'short' | 'standard';
+
+export interface CoverLetterResult {
+  subject: string;
+  greeting: string;
+  paragraphs: string[];
+  closing: string;
+  highlightsUsed: string[];
+}

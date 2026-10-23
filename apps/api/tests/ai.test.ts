@@ -238,3 +238,106 @@ describe('booking with an AI review', () => {
       .expect(400);
   });
 });
+
+describe('interview questions and cover letters', () => {
+  const questions = {
+    rounds: [
+      {
+        category: 'technical',
+        questions: [
+          {
+            question: 'How did you build Trackly offline sync?',
+            whyAsked: 'Depth',
+            answerPoints: ['IndexedDB'],
+            difficulty: 'medium',
+            fromResume: true,
+          },
+        ],
+      },
+    ],
+    questionsToAsk: ['What does success look like in 90 days?'],
+  };
+  const letter = {
+    subject: 'Frontend Engineer application',
+    greeting: 'Dear Hiring Team,',
+    paragraphs: ['One', 'Two'],
+    closing: 'Best regards,\nSam',
+    highlightsUsed: ['Node'],
+  };
+
+  async function setup() {
+    vi.mocked(callStructured).mockResolvedValueOnce(review());
+    const { agent } = await loginAs('user', 'me@test.dev');
+    const { body } = await agent
+      .post('/api/jobs')
+      .send({ company: 'Acme', title: 'Frontend Engineer', jobDescription: 'React' })
+      .expect(201);
+    const reviewRun = await runReview(agent, { text: 'resume' });
+    return { agent, jobId: body.job.id as string, reviewId: reviewRun.id as string };
+  }
+
+  it('generates questions from the job and the review profile', async () => {
+    const { agent, jobId, reviewId } = await setup();
+    vi.mocked(callStructured).mockResolvedValueOnce(questions);
+
+    const res = await agent
+      .post('/api/ai/interview-questions')
+      .send({ jobId, reviewId })
+      .expect(202);
+    await settleRuns();
+    const run = (await agent.get(`/api/ai/runs/${res.body.run.id}`).expect(200)).body.run;
+    expect(run).toMatchObject({
+      status: 'done',
+      kind: 'interview_questions',
+      jobId,
+      sourceRunId: reviewId,
+    });
+    expect(run.result.rounds[0].questions[0].fromResume).toBe(true);
+
+    const prompt = JSON.stringify(vi.mocked(callStructured).mock.calls.at(-1)![0].content);
+    expect(prompt).toContain('<job_posting>');
+    expect(prompt).toContain('<candidate_profile>');
+
+    // The review is optional.
+    vi.mocked(callStructured).mockResolvedValueOnce(questions);
+    await agent.post('/api/ai/interview-questions').send({ jobId }).expect(202);
+    await settleRuns();
+  });
+
+  it("drafts a cover letter only from the user's own finished review", async () => {
+    const { agent, jobId, reviewId } = await setup();
+
+    await agent.post('/api/ai/cover-letters').send({ jobId }).expect(400);
+    const other = await loginAs('user', 'other@test.dev');
+    const { body: otherJob } = await other.agent
+      .post('/api/jobs')
+      .send({ company: 'B', title: 'C' })
+      .expect(201);
+    await other.agent
+      .post('/api/ai/cover-letters')
+      .send({ jobId: otherJob.job.id, reviewId })
+      .expect(400);
+
+    vi.mocked(callStructured).mockResolvedValueOnce(letter);
+    const res = await agent
+      .post('/api/ai/cover-letters')
+      .send({ jobId, reviewId, tone: 'friendly', length: 'short' })
+      .expect(202);
+    await settleRuns();
+    const run = (await agent.get(`/api/ai/runs/${res.body.run.id}`).expect(200)).body.run;
+    expect(run).toMatchObject({ status: 'done', input: { tone: 'friendly', length: 'short' } });
+    expect(JSON.stringify(vi.mocked(callStructured).mock.calls.at(-1)![0].content)).toContain(
+      'Tone: friendly. Length: short.',
+    );
+
+    // A failed or non-review run is not a valid source.
+    vi.mocked(callStructured).mockRejectedValueOnce(new AiFailure('nope'));
+    const failed = await runReview(agent, { text: 'resume' });
+    await agent.post('/api/ai/cover-letters').send({ jobId, reviewId: failed.id }).expect(400);
+    await agent.post('/api/ai/cover-letters').send({ jobId, reviewId: run.id }).expect(400);
+
+    // Saving the edited letter to the job.
+    await agent.patch(`/api/jobs/${jobId}`).send({ coverLetter: 'My edited letter' }).expect(200);
+    expect((await agent.get(`/api/jobs/${jobId}`)).body.job.coverLetter).toBe('My edited letter');
+  });
+});

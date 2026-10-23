@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { authApi } from '../api/auth';
 import type { User } from '../api/types';
 import { currentTheme, type Theme } from '../components/ui';
 import { useAuth } from './AuthContext';
+import s from './GoogleButton.module.css';
 
 declare global {
   interface Window {
@@ -51,22 +52,71 @@ function useTheme() {
   return theme;
 }
 
-/** "Continue with Google". Renders nothing when Google sign-in is not configured. */
+/**
+ * In-app browsers (LinkedIn, Facebook, Instagram, Gmail/Google app, Android WebViews...).
+ * Google blocks sign-in inside them ("disallowed_useragent"), so the button would never appear.
+ */
+const IN_APP_BROWSER = /FBAN|FBAV|Instagram|LinkedInApp|Line\/|; wv\)|GSA\/|MicroMessenger/i;
+const isInAppBrowser = () => IN_APP_BROWSER.test(navigator.userAgent);
+
+/** How long Google gets to draw its button before we show the email fallback note. */
+const RENDER_TIMEOUT_MS = 3000;
+
+type Status = 'loading' | 'ready' | 'in-app' | 'failed';
+
+function InAppHint() {
+  const [copied, setCopied] = useState<boolean | null>(null);
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+    } catch {
+      setCopied(false);
+    }
+  };
+
+  return (
+    <div className={s.note} role="note">
+      <p>
+        Google sign-in isn't available in this in-app browser. Open this page in Safari or Chrome,
+        or use email below.
+      </p>
+      <button type="button" className={s.copy} onClick={copy}>
+        {copied === null
+          ? 'Copy link'
+          : copied
+            ? 'Link copied ✓'
+            : 'Copy failed: use the menu to open in browser'}
+      </button>
+    </div>
+  );
+}
+
+/**
+ * "Continue with Google", followed by `divider`. Renders nothing when Google sign-in is not
+ * configured, and a short note instead of an empty space when Google can't load.
+ */
 export function GoogleButton({
   onSuccess,
   onError,
+  divider,
 }: {
   onSuccess: (user: User) => void;
   onError: (msg: string) => void;
+  divider: ReactNode;
 }) {
   const { config } = useAuth();
   const ref = useRef<HTMLDivElement>(null);
   const clientId = config.googleClientId;
   const theme = useTheme();
+  const [status, setStatus] = useState<Status>(() => (isInAppBrowser() ? 'in-app' : 'loading'));
+  const unavailable = status === 'in-app' || status === 'failed';
 
   useEffect(() => {
-    if (!clientId) return;
+    if (!clientId || unavailable) return;
     let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
     loadGoogleScript()
       .then(() => {
         if (cancelled || !ref.current || !window.google) return;
@@ -83,20 +133,41 @@ export function GoogleButton({
           text: 'continue_with',
           width: Math.min(ref.current.offsetWidth || 360, 400),
         });
+        // Blockers and some browsers let the script load but never draw the button.
+        timer = setTimeout(() => {
+          if (!cancelled) setStatus(ref.current?.childElementCount ? 'ready' : 'failed');
+        }, RENDER_TIMEOUT_MS);
       })
-      .catch(() => onError('Google sign-in is unavailable right now'));
+      .catch(() => {
+        if (!cancelled) setStatus('failed');
+      });
     return () => {
       cancelled = true;
+      clearTimeout(timer);
     };
-  }, [clientId, theme, onSuccess, onError]);
+  }, [clientId, theme, unavailable, onSuccess, onError]);
 
   if (!clientId) return null;
+  if (status === 'in-app') {
+    return (
+      <>
+        <InAppHint />
+        {divider}
+      </>
+    );
+  }
+  if (status === 'failed') {
+    return <p className={s.failed}>Google sign-in couldn't load here. You can still use email.</p>;
+  }
   // Google's button is an iframe with a light color scheme. In a dark page the browser paints a
   // mismatched iframe with an opaque white backdrop, so keep its container light to stay transparent.
   return (
-    <div
-      ref={ref}
-      style={{ minHeight: 44, display: 'flex', justifyContent: 'center', colorScheme: 'light' }}
-    />
+    <>
+      <div
+        ref={ref}
+        style={{ minHeight: 44, display: 'flex', justifyContent: 'center', colorScheme: 'light' }}
+      />
+      {divider}
+    </>
   );
 }

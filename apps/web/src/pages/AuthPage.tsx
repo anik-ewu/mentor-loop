@@ -94,8 +94,11 @@ export function AuthPage({ mode }: { mode: Mode }) {
             : 'Log in to manage your sessions.'}
         </p>
 
-        <GoogleButton onSuccess={onAuthed} onError={onGoogleError} />
-        <div className={s.divider}>or with email</div>
+        <GoogleButton
+          onSuccess={onAuthed}
+          onError={onGoogleError}
+          divider={<div className={s.divider}>or with email</div>}
+        />
 
         <form className={s.form} onSubmit={submit} noValidate>
           {alert && (

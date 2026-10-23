@@ -10,6 +10,7 @@ import { Field } from '../components/ui';
 import s from './Auth.module.css';
 
 export function ForgotPassword() {
+  const { config, configLoaded } = useAuth();
   const [email, setEmail] = useState('');
   const [error, setError] = useState<string>();
   const [sent, setSent] = useState(false);
@@ -28,6 +29,9 @@ export function ForgotPassword() {
       setSubmitting(false);
     }
   };
+
+  // Off in production without an email provider; the login page hides the link too.
+  if (configLoaded && !config.passwordResetEnabled) return <Navigate to="/login" replace />;
 
   return (
     <CursorGlow className={s.wrap}>

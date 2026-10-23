@@ -1,5 +1,7 @@
 # MentorLoop revamp: job tracker + AI coach + weekly goals
 
+> Product spec (features, requirements, acceptance criteria): [`SPEC.md`](./SPEC.md).
+
 ## Context
 
 MentorLoop is a single-mentor booking app today (services, slots, bookings). Sabbir wants it to become a **job-search toolkit** built around the job tracker, with AI features tied to the jobs a candidate saves. Human mentoring stays, linked to the AI output.
@@ -85,7 +87,7 @@ Existing patterns to reuse:
   - System prompts treat the resume and job text as **untrusted data** to guard against prompt injection.
   - Haiku 5.5 has no server-side fallback, so a refusal shows as a failed run with a retry option.
 - Quota: `AI_DAILY_LIMIT` (default 10) counts all AI runs per user in the last 24 h. Admin is exempt. Over the limit returns 429.
-- No `ANTHROPIC_API_KEY` returns 503, and a flag on `/api/auth/me` hides the AI buttons in the UI.
+- No `ANTHROPIC_API_KEY` returns 503, and `aiEnabled` on `/api/auth/config` hides the AI buttons in the UI.
 
 **a) Resume review / job match:** `POST /api/ai/reviews` (multipart)
 

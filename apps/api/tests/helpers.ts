@@ -6,7 +6,9 @@ import { prisma } from '../src/lib/prisma';
 export const app = createApp();
 
 export async function resetDb() {
-  await prisma.$executeRawUnsafe('TRUNCATE "Booking", "Slot", "Service", "JobEvent", "JobApplication", "AiRun", "WeeklyGoal", "User" CASCADE');
+  await prisma.$executeRawUnsafe(
+    'TRUNCATE "Booking", "Slot", "Service", "JobEvent", "JobApplication", "AiRun", "WeeklyGoal", "User" CASCADE',
+  );
 }
 
 export async function createUser(role: 'user' | 'admin' = 'user', email = `${role}@test.dev`) {

@@ -12,7 +12,7 @@
 
 ## Features
 
-- **Job tracker:** a Kanban board (drag and drop, or a stage select on touch and keyboard) and a searchable table. Each job has a timeline of stage changes, interview rounds, follow-ups and notes. Stats show the response rate, interviews, offers and which follow-ups are due.
+- **Job tracker:** a Kanban board (drag and drop, or a stage select on touch and keyboard) and a searchable table. Each job has its own page: details, a timeline of stage changes, interview rounds, follow-ups and notes, interview prep, and its resume match and cover letter. Stats show the response rate, interviews, offers and which follow-ups are due.
 - **AI coach** (Claude): upload a PDF or paste your resume and get an overall, ATS and **job match** score, prioritised fixes, before → after bullet rewrites, missing keywords and red flags. From a saved job it also writes **interview questions** (some about your own projects, with a checkbox to track which ones you have practised) and drafts an editable **cover letter** you can save to the job.
 - **Weekly goals and streaks:** targets like "5 applications, 2 interviews", with progress computed from what you log, in your own timezone; a daily activity streak and a weekly "all goals met" streak.
 - **Mentoring:** book a Resume Deep-Dive, Career Guidance Call or Mock Interview; attach an AI review so the mentor arrives prepared. The mentor confirms requests, publishes availability and manages services.

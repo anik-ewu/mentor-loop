@@ -2,6 +2,7 @@ import { Router, type Request, type Response } from 'express';
 import rateLimit from 'express-rate-limit';
 import type { User } from '@prisma/client';
 import { env } from '../../config/env';
+import { aiEnabled } from '../ai/claude';
 import { notFound } from '../../lib/errors';
 import { signToken } from '../../lib/jwt';
 import { AUTH_COOKIE, optionalAuth } from '../../middleware/auth';
@@ -34,7 +35,11 @@ export const authRouter = Router();
 
 /** Tells the web app which login options to show. */
 authRouter.get('/config', (_req, res) => {
-  res.json({ googleClientId: env.GOOGLE_CLIENT_ID || null, demoMode: env.DEMO_MODE });
+  res.json({
+    googleClientId: env.GOOGLE_CLIENT_ID || null,
+    demoMode: env.DEMO_MODE,
+    aiEnabled: aiEnabled(),
+  });
 });
 
 authRouter.post('/signup', authLimiter, validateBody(signupSchema), async (req, res) => {

@@ -48,6 +48,15 @@ export function BookingCard({ booking, showUser, actions, index = 0 }: Props) {
             </a>
           )}
         </div>
+        {booking.resumeReview && (
+          <p className={s.review}>
+            <strong>
+              AI review: {booking.resumeReview.score ?? '–'}/100
+              {booking.resumeReview.targetRole && ` · ${booking.resumeReview.targetRole}`}
+            </strong>
+            {booking.resumeReview.summary && <span>{booking.resumeReview.summary}</span>}
+          </p>
+        )}
         {booking.note && (
           <p className={s.note} title={booking.note}>
             “{booking.note}”

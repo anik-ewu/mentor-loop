@@ -1,4 +1,4 @@
-import type { BookingStatus, Role } from '@prisma/client';
+import type { BookingStatus, Prisma, Role } from '@prisma/client';
 import { prisma } from '../../lib/prisma';
 import { badRequest, conflict, forbidden, notFound } from '../../lib/errors';
 import type { CreateBookingInput } from './bookings.schema';
@@ -17,10 +17,36 @@ const withDetails = {
   slot: true,
   service: { select: { id: true, name: true, durationMin: true } },
   user: { select: { id: true, name: true, email: true, avatarUrl: true } },
+  resumeReview: { select: { id: true, score: true, input: true, result: true } },
 } as const;
 
+type BookingWithDetails = Prisma.BookingGetPayload<{ include: typeof withDetails }>;
+
+/** Replaces the attached review's full result with what the mentor's card needs. */
+function shape<T extends BookingWithDetails | null>(booking: T) {
+  if (!booking) return booking;
+  const { resumeReview: review, ...rest } = booking;
+  const result = review?.result as { summary?: string } | null | undefined;
+  const input = review?.input as { targetRole?: string | null } | null | undefined;
+  return {
+    ...rest,
+    resumeReview: review && {
+      id: review.id,
+      score: review.score,
+      summary: result?.summary ?? null,
+      targetRole: input?.targetRole ?? null,
+    },
+  };
+}
+
 export async function create(userId: string, input: CreateBookingInput) {
-  return prisma.$transaction(async (tx) => {
+  if (input.resumeReviewId) {
+    const review = await prisma.aiRun.findFirst({
+      where: { id: input.resumeReviewId, userId, kind: 'resume_review', status: 'done' },
+    });
+    if (!review) throw badRequest('That AI review cannot be attached to a booking');
+  }
+  const booking = await prisma.$transaction(async (tx) => {
     const service = await tx.service.findFirst({ where: { id: input.serviceId, isActive: true } });
     if (!service) throw notFound('Service');
 
@@ -34,21 +60,26 @@ export async function create(userId: string, input: CreateBookingInput) {
 
     return tx.booking.create({ data: { ...input, userId }, include: withDetails });
   });
+  return shape(booking);
 }
 
 export const listForUser = (userId: string) =>
-  prisma.booking.findMany({
-    where: { userId },
-    orderBy: { slot: { startsAt: 'desc' } },
-    include: withDetails,
-  });
+  prisma.booking
+    .findMany({
+      where: { userId },
+      orderBy: { slot: { startsAt: 'desc' } },
+      include: withDetails,
+    })
+    .then((list) => list.map(shape));
 
 export const listAll = (status?: BookingStatus) =>
-  prisma.booking.findMany({
-    where: status ? { status } : undefined,
-    orderBy: { slot: { startsAt: 'asc' } },
-    include: withDetails,
-  });
+  prisma.booking
+    .findMany({
+      where: status ? { status } : undefined,
+      orderBy: { slot: { startsAt: 'asc' } },
+      include: withDetails,
+    })
+    .then((list) => list.map(shape));
 
 async function setStatus(id: string, status: BookingStatus) {
   return prisma.$transaction(async (tx) => {
@@ -60,7 +91,7 @@ async function setStatus(id: string, status: BookingStatus) {
     if (status === 'cancelled') {
       await tx.slot.update({ where: { id: booking.slotId }, data: { status: 'open' } });
     }
-    return booking;
+    return shape(booking);
   });
 }
 
@@ -101,6 +132,6 @@ export async function stats() {
     cancelled: counts.cancelled ?? 0,
     users,
     openSlots,
-    nextBooking: next,
+    nextBooking: shape(next),
   };
 }

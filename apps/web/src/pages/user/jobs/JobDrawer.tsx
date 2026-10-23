@@ -10,14 +10,20 @@ import { TrashIcon } from '../../../components/icons';
 import { useToast } from '../../../components/Toast';
 import { Field, Skeleton } from '../../../components/ui';
 import { STATUSES, STATUS_LABEL, WORK_MODE_LABEL, errorMessage, useMoveJob } from './jobMeta';
+import { useAuth } from '../../../auth/AuthContext';
+import { JobAiTab } from './JobAiTab';
 import { Timeline } from './Timeline';
 import s from './jobs.module.css';
 import d from '../../dashboard.module.css';
 
-type Tab = 'details' | 'timeline';
+type Tab = 'details' | 'timeline' | 'ai';
+
+const TAB_LABEL: Record<Tab, string> = { details: 'Details', timeline: 'Timeline', ai: 'AI' };
 
 /** Side panel with everything about one job. */
 export function JobDrawer({ jobId, onClose }: { jobId: string; onClose: () => void }) {
+  const { config } = useAuth();
+  const tabs: Tab[] = config.aiEnabled ? ['details', 'timeline', 'ai'] : ['details', 'timeline'];
   const [tab, setTab] = useState<Tab>('details');
   const [confirmDelete, setConfirmDelete] = useState(false);
   const qc = useQueryClient();
@@ -26,6 +32,9 @@ export function JobDrawer({ jobId, onClose }: { jobId: string; onClose: () => vo
   const { data: job, isPending } = useQuery({
     queryKey: ['jobs', jobId],
     queryFn: () => jobsApi.get(jobId),
+    // Keep AI results on the AI tab fresh while one is still being generated.
+    refetchInterval: (q) =>
+      q.state.data?.aiRuns.some((r) => r.status === 'processing') ? 3000 : false,
   });
 
   const remove = useMutation({
@@ -86,7 +95,7 @@ export function JobDrawer({ jobId, onClose }: { jobId: string; onClose: () => vo
 
         <div className={s.drawerTabs}>
           <div className={d.tabs} role="tablist">
-            {(['details', 'timeline'] as const).map((t) => (
+            {tabs.map((t) => (
               <button
                 key={t}
                 role="tab"
@@ -94,7 +103,7 @@ export function JobDrawer({ jobId, onClose }: { jobId: string; onClose: () => vo
                 className={d.tab}
                 onClick={() => setTab(t)}
               >
-                {t === 'details' ? 'Details' : 'Timeline'}
+                {TAB_LABEL[t]}
                 {t === 'timeline' && job && <span className={d.count}>{job.events.length}</span>}
               </button>
             ))}
@@ -110,8 +119,10 @@ export function JobDrawer({ jobId, onClose }: { jobId: string; onClose: () => vo
             </div>
           ) : tab === 'details' ? (
             <DetailsForm key={job.updatedAt} job={job} onDelete={() => setConfirmDelete(true)} />
-          ) : (
+          ) : tab === 'timeline' ? (
             <Timeline job={job} />
+          ) : (
+            <JobAiTab job={job} />
           )}
         </div>
       </aside>

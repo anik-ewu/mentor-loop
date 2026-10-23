@@ -1,6 +1,7 @@
 import { useMemo, useState, type FormEvent } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
+import { aiApi } from '../../api/ai';
 import { bookingsApi } from '../../api/bookings';
 import { ApiError } from '../../api/client';
 import { servicesApi } from '../../api/services';
@@ -31,6 +32,14 @@ export function Book() {
   const [details, setDetails] = useState({ note: '', cvUrl: '' });
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [booked, setBooked] = useState<Booking | null>(null);
+  const reviewId = params.get('review');
+  const review = useQuery({
+    queryKey: ['ai', 'run', reviewId],
+    queryFn: () => aiApi.run(reviewId!),
+    enabled: !!reviewId,
+  });
+  // Only a finished review can be shared with the mentor.
+  const attachReview = review.data?.status === 'done' && review.data.kind === 'resume_review';
 
   const days = useMemo(() => groupByDay(slots.data ?? [], (sl) => sl.startsAt), [slots.data]);
   const activeDay = day && days.has(day) ? day : (days.keys().next().value ?? null);
@@ -44,6 +53,7 @@ export function Book() {
         slotId: slotId!,
         note: details.note || undefined,
         cvUrl: details.cvUrl || undefined,
+        resumeReviewId: attachReview ? reviewId! : undefined,
       }),
     onSuccess: (booking) => {
       setBooked(booking);
@@ -286,6 +296,12 @@ export function Book() {
             <dd>{slot ? formatLongDay(slot.startsAt) : '—'}</dd>
             <dt>Time</dt>
             <dd>{slot ? formatRange(slot.startsAt, slot.endsAt) : '—'}</dd>
+            {attachReview && (
+              <>
+                <dt>AI review</dt>
+                <dd>Attached ({review.data!.score}/100)</dd>
+              </>
+            )}
           </dl>
           <p className="subtle">Free to cancel any time before the session.</p>
         </aside>

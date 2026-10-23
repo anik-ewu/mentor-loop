@@ -4,6 +4,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import { env } from './config/env';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
+import { aiRouter } from './modules/ai/ai.routes';
 import { authRouter } from './modules/auth/auth.routes';
 import { bookingsRouter } from './modules/bookings/bookings.routes';
 import { jobsRouter } from './modules/jobs/jobs.routes';
@@ -29,6 +30,7 @@ export function createApp() {
   app.use('/api/slots', slotsRouter);
   app.use('/api/bookings', bookingsRouter);
   app.use('/api/jobs', jobsRouter);
+  app.use('/api/ai', aiRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

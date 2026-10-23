@@ -15,7 +15,7 @@ This spec describes **what** to build and **how we know it's done**. File-level 
 
 **Current state (branch `claude/confident-tesla-18fq7p`)**
 
-- Done: the database schema and migration for every feature below (`apps/api/prisma/schema.prisma`, migration `career_toolkit`), the AI env vars, the renamed services and demo seed data, dev tooling (F0) and the job tracker (F1).
+- Done: the database schema and migration for every feature below (`apps/api/prisma/schema.prisma`, migration `career_toolkit`), the AI env vars, the renamed services and demo seed data, dev tooling (F0), the job tracker (F1), the AI runner (F2), resume review / job match (F3) and the booking merge (F4).
 - Not started: everything else.
 
 ## 2. Feature status
@@ -23,10 +23,10 @@ This spec describes **what** to build and **how we know it's done**. File-level 
 | #   | Feature                                       | Priority | Status                      | Plan step |
 | --- | --------------------------------------------- | -------- | --------------------------- | --------- |
 | F0  | Dev tooling: `npm run dev` starts API and web | P0       | Done                        | 2         |
-| F1  | Job tracker                                   | P0       | Done (AI tab comes with F3) | 2         |
-| F2  | AI shared runner (quota, async, errors)       | P1       | Not started                 | 3         |
-| F3  | AI resume review / job match                  | P1       | Not started                 | 3         |
-| F4  | Booking merge (attach AI review to a session) | P1       | Not started                 | 3         |
+| F1  | Job tracker                                   | P0       | Done                        | 2         |
+| F2  | AI shared runner (quota, async, errors)       | P1       | Done                        | 3         |
+| F3  | AI resume review / job match                  | P1       | Done                        | 3         |
+| F4  | Booking merge (attach AI review to a session) | P1       | Done                        | 3         |
 | F5  | AI interview questions                        | P1       | Not started                 | 4         |
 | F6  | AI cover letter                               | P1       | Not started                 | 4         |
 | F7  | Weekly goals and streaks                      | P1       | Not started                 | 5         |

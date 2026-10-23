@@ -9,6 +9,8 @@ export const createBookingSchema = z.object({
     .max(500)
     .optional()
     .or(z.literal('').transform(() => undefined)),
+  /** A finished AI resume review to share with the mentor. */
+  resumeReviewId: z.uuid().optional(),
 });
 
 export const updateStatusSchema = z.object({

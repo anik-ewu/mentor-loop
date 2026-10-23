@@ -44,7 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       value={{
         user: me.data ?? null,
         loading: me.isPending,
-        config: config.data ?? { googleClientId: null, demoMode: false },
+        config: config.data ?? { googleClientId: null, demoMode: false, aiEnabled: false },
         setUser,
         logout,
       }}

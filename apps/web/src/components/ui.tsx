@@ -110,6 +110,8 @@ interface FieldProps extends InputHTMLAttributes<HTMLInputElement> {
   error?: string;
   hint?: string;
   multiline?: boolean;
+  /** Height of a multiline field. */
+  rows?: number;
 }
 
 export function Field({ label, error, hint, multiline, id, ...rest }: FieldProps) {

@@ -36,3 +36,6 @@ export const TrashIcon = base('M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v
 export const BriefcaseIcon = base(
   'M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M4 7h16a1 1 0 0 1 1 1v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a1 1 0 0 1 1-1zM3 12h18',
 );
+export const SparkIcon = base(
+  'M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8zM19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z',
+);

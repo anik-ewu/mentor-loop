@@ -33,6 +33,13 @@ export interface Booking {
   slot: Slot;
   service: Pick<Service, 'id' | 'name' | 'durationMin'>;
   user: Pick<User, 'id' | 'name' | 'email' | 'avatarUrl'>;
+  /** AI resume review the candidate shared with the mentor. */
+  resumeReview: {
+    id: string;
+    score: number | null;
+    summary: string | null;
+    targetRole: string | null;
+  } | null;
 }
 
 export interface AdminSlot extends Slot {
@@ -52,6 +59,7 @@ export interface Stats {
 export interface AuthConfig {
   googleClientId: string | null;
   demoMode: boolean;
+  aiEnabled: boolean;
 }
 
 // ---------- Job tracker ----------
@@ -142,4 +150,63 @@ export interface JobStats {
     scheduledAt: string;
     job: Pick<JobSummary, 'id' | 'company' | 'title'>;
   }[];
+}
+
+// ---------- AI coach ----------
+
+export type AiKind = 'resume_review' | 'interview_questions' | 'cover_letter';
+export type AiStatus = 'processing' | 'done' | 'failed';
+
+export interface Profile {
+  headline: string;
+  skills: string[];
+  experience: { role: string; company: string; period: string; highlights: string[] }[];
+  projects: { name: string; summary: string; tech: string[] }[];
+  education: string[];
+}
+
+export interface ReviewResult {
+  overallScore: number;
+  atsScore: number;
+  summary: string;
+  seniority: 'fresher' | 'junior' | 'mid' | 'senior' | 'lead';
+  sections: { name: string; score: number; feedback: string }[];
+  strengths: string[];
+  improvements: { priority: 'high' | 'medium' | 'low'; issue: string; fix: string }[];
+  bulletRewrites: { original: string; improved: string; why: string }[];
+  missingKeywords: string[];
+  redFlags: string[];
+  jobMatch: {
+    score: number;
+    matchedSkills: string[];
+    missingSkills: string[];
+    verdict: string;
+  } | null;
+  profile: Profile;
+}
+
+export interface AiRunInput {
+  source?: 'pdf' | 'text';
+  fileName?: string | null;
+  targetRole?: string | null;
+  tone?: string;
+  length?: string;
+}
+
+export interface AiRunSummary {
+  id: string;
+  kind: AiKind;
+  status: AiStatus;
+  score: number | null;
+  error: string | null;
+  input: AiRunInput;
+  jobId: string | null;
+  sourceRunId: string | null;
+  createdAt: string;
+  completedAt: string | null;
+  job: Pick<JobSummary, 'id' | 'company' | 'title'> | null;
+}
+
+export interface AiRun<R = unknown> extends AiRunSummary {
+  result: R | null;
 }

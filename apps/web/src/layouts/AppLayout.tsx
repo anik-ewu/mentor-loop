@@ -11,6 +11,7 @@ import {
   ListIcon,
   LogoutIcon,
   PlusIcon,
+  SparkIcon,
 } from '../components/icons';
 import { Avatar, Logo, ThemeToggle } from '../components/ui';
 import { useToast } from '../components/Toast';
@@ -26,6 +27,7 @@ interface NavItem {
 const USER_NAV: NavItem[] = [
   { to: '/app', label: 'Home', icon: HomeIcon, end: true },
   { to: '/app/jobs', label: 'Jobs', icon: BriefcaseIcon },
+  { to: '/app/ai', label: 'AI Coach', icon: SparkIcon },
   { to: '/app/book', label: 'Book', icon: PlusIcon },
   { to: '/app/bookings', label: 'My sessions', icon: ListIcon },
 ];

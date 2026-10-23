@@ -14,8 +14,13 @@ export const aiDisabled = () =>
 export async function assertCanRun(userId: string, role: Role) {
   if (!aiEnabled()) throw aiDisabled();
   if (role === 'admin') return;
+  // Failed runs don't count: a refusal, outage or setup problem shouldn't use up the day.
   const used = await prisma.aiRun.count({
-    where: { userId, createdAt: { gt: new Date(Date.now() - DAY_MS) } },
+    where: {
+      userId,
+      status: { not: 'failed' },
+      createdAt: { gt: new Date(Date.now() - DAY_MS) },
+    },
   });
   if (used >= env.AI_DAILY_LIMIT) {
     throw new AppError(429, 'AI_LIMIT', "You've used today's AI limit. Try again tomorrow.");

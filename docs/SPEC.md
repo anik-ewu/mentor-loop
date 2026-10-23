@@ -161,7 +161,7 @@ On update, sending `''` clears a field and leaving a key out keeps its value.
 - **FR-AI-1 Model:** `ANTHROPIC_MODEL`, default `claude-haiku-5-5`, effort `medium`. Estimated cost is under $0.01 per call.
 - **FR-AI-2 Structured output:** every feature has a zod schema, and the response is parsed and validated against it. Scores are clamped to 0–100.
 - **FR-AI-3 Async:** `POST` creates an `AiRun` with status `processing` and returns **202** straight away; the AI call runs in the background. The UI polls `GET /api/ai/runs/:id` every 2 s until the run is `done` or `failed`. On server start, runs still `processing` after 5 minutes are marked `failed`.
-- **FR-AI-4 Quota:** up to `AI_DAILY_LIMIT` runs (default 10) per user in a rolling 24 hours, across all AI kinds. The mentor is exempt. Over the limit returns **429** with "You've used today's AI limit. Try again tomorrow."
+- **FR-AI-4 Quota:** up to `AI_DAILY_LIMIT` runs (default 10) per user in a rolling 24 hours, across all AI kinds. Failed runs do not count; runs still processing do. The mentor is exempt. Over the limit returns **429** with "You've used today's AI limit. Try again tomorrow."
 - **FR-AI-5 Off switch:** with no `ANTHROPIC_API_KEY`, AI endpoints return **503**, `/api/auth/config` reports `aiEnabled: false`, and the UI hides every AI button.
 - **FR-AI-6 Failures:**
   - A refusal, a cut-off response (`max_tokens`), a schema mismatch, a rate limit or an API error marks the run `failed` with a user-safe message. Raw API errors are never shown.

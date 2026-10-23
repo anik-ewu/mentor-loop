@@ -172,6 +172,25 @@ describe('AI resume review', () => {
     await settleRuns();
   });
 
+  it("doesn't count failed runs toward the quota, but counts ones still processing", async () => {
+    vi.mocked(callStructured).mockResolvedValue(review());
+    const { agent, user } = await loginAs();
+    const run = (status: 'failed' | 'processing') => ({
+      userId: user.id,
+      kind: 'resume_review' as const,
+      status,
+      input: {},
+      model: 'test',
+    });
+    await prisma.aiRun.createMany({ data: Array.from({ length: 10 }, () => run('failed')) });
+    await agent.post('/api/ai/reviews').send({ text: 'resume' }).expect(202);
+    await settleRuns();
+
+    // 1 done + 9 in progress = 10: the limit applies again.
+    await prisma.aiRun.createMany({ data: Array.from({ length: 9 }, () => run('processing')) });
+    await agent.post('/api/ai/reviews').send({ text: 'resume' }).expect(429);
+  });
+
   it('returns 503 and reports aiEnabled=false with no API key', async () => {
     vi.mocked(aiEnabled).mockReturnValue(false);
     const { agent } = await loginAs();

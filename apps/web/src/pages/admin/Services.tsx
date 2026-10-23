@@ -7,12 +7,13 @@ import { Button } from '../../components/Button';
 import { PlusIcon } from '../../components/icons';
 import { Modal } from '../../components/Modal';
 import { useToast } from '../../components/Toast';
-import { EmptyState, Field, Skeleton } from '../../components/ui';
+import { EmptyState, Field, Skeleton, usePageTitle } from '../../components/ui';
 import s from './admin.module.css';
 
 const EMPTY: ServiceInput = { name: '', description: '', durationMin: 45, isActive: true };
 
 export function Services() {
+  usePageTitle('Services');
   const qc = useQueryClient();
   const toast = useToast();
   const [editing, setEditing] = useState<Service | 'new' | null>(null);

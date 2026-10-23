@@ -35,6 +35,7 @@ const ADMIN_NAV: NavItem[] = [
   { to: '/admin/bookings', label: 'Bookings', icon: ListIcon },
   { to: '/admin/slots', label: 'Availability', icon: CalendarIcon },
   { to: '/admin/services', label: 'Services', icon: LayersIcon },
+  { to: '/admin/usage', label: 'AI usage', icon: SparkIcon },
 ];
 
 const linkClass =

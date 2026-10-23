@@ -15,6 +15,11 @@ const envSchema = z.object({
   ANTHROPIC_API_KEY: z.string().default(''),
   ANTHROPIC_MODEL: z.string().default('claude-haiku-5-5'),
   AI_DAILY_LIMIT: z.coerce.number().int().min(0).default(10),
+  // USD per million tokens, used to price each run (defaults: Claude Haiku 5.5).
+  AI_PRICE_INPUT_PER_MTOK: z.coerce.number().min(0).default(0.1),
+  AI_PRICE_OUTPUT_PER_MTOK: z.coerce.number().min(0).default(0.5),
+  // Spend cap per calendar month (UTC) across all users; 0 = no cap.
+  AI_MONTHLY_BUDGET_USD: z.coerce.number().min(0).default(0),
   DEMO_MODE: z
     .enum(['true', 'false'])
     .default('false')

@@ -3,7 +3,7 @@ import type { AiRunSummary } from '../../../api/types';
 import { formatDay } from '../../../lib/format';
 import s from './ai.module.css';
 
-const KIND_LABEL = {
+export const KIND_LABEL = {
   resume_review: 'Resume review',
   interview_questions: 'Interview prep',
   cover_letter: 'Cover letter',

@@ -39,6 +39,7 @@ model User {
   jobs         JobApplication[]
   aiRuns       AiRun[]
   goals        WeeklyGoal[]
+  aiLimitHits  AiLimitHit[]
 }
 
 model Service {
@@ -176,22 +177,26 @@ enum AiStatus {
 
 /// One row per AI request, whatever its kind: one quota, one runner, one polling endpoint.
 model AiRun {
-  id          String    @id @default(uuid())
-  userId      String
-  kind        AiKind
-  status      AiStatus  @default(processing)
-  jobId       String?
+  id           String    @id @default(uuid())
+  userId       String
+  kind         AiKind
+  status       AiStatus  @default(processing)
+  jobId        String?
   /// The resume review a cover letter or question set was built from.
-  sourceRunId String?
-  input       Json
-  result      Json?
-  score       Int?
-  error       String?
-  model       String
+  sourceRunId  String?
+  input        Json
+  result       Json?
+  score        Int?
+  error        String?
+  model        String
+  inputTokens  Int?
+  outputTokens Int?
+  /// What the run cost, in millionths of a US dollar (whole numbers: no float rounding).
+  costMicros   Int?
   /// Interview questions the user ticked as practised, as "<roundIndex>-<questionIndex>".
-  practiced   String[]  @default([])
-  createdAt   DateTime  @default(now())
-  completedAt DateTime?
+  practiced    String[]  @default([])
+  createdAt    DateTime  @default(now())
+  completedAt  DateTime?
 
   user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   job       JobApplication? @relation(fields: [jobId], references: [id], onDelete: SetNull)
@@ -201,6 +206,23 @@ model AiRun {
 
   @@index([userId, kind, createdAt])
   @@index([status, createdAt])
+}
+
+enum AiLimitReason {
+  daily
+  budget
+}
+
+/// One row each time a user is turned away by the daily limit or the monthly budget.
+model AiLimitHit {
+  id        String        @id @default(uuid())
+  userId    String
+  reason    AiLimitReason
+  createdAt DateTime      @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([createdAt])
 }
 
 // ---------- Weekly goals ----------

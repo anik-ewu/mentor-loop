@@ -15,8 +15,9 @@
 - **Job tracker:** a Kanban board (drag and drop, or a stage select on touch and keyboard) and a searchable table. Each job has its own page: details, a timeline of stage changes, interview rounds, follow-ups and notes, interview prep, and its resume match and cover letter. Stats show the response rate, interviews, offers and which follow-ups are due.
 - **AI coach** (Claude): upload a PDF or paste your resume and get an overall, ATS and **job match** score, prioritised fixes, before → after bullet rewrites, missing keywords and red flags. From a saved job it also writes **interview questions** (some about your own projects, with a checkbox to track which ones you have practised) and drafts an editable **cover letter** you can save to the job.
 - **Weekly goals and streaks:** targets like "5 applications, 2 interviews", with progress computed from what you log, in your own timezone; a daily activity streak and a weekly "all goals met" streak.
+- **AI usage (admin):** cost per day and per feature, top users, recent failures and who hits the limits, with an optional monthly budget that pauses AI once it's spent.
 - **Mentoring:** book a Resume Deep-Dive, Career Guidance Call or Mock Interview; attach an AI review so the mentor arrives prepared. The mentor confirms requests, publishes availability and manages services.
-- **Demo mode** lets visitors try both sides with one click ("Try as client" / "Try as mentor").
+- **Demo mode** lets visitors try both sides with one click ("Try as client" / "Try as admin").
 
 Also: email + password or Google sign-in, **no double booking**, a responsive dashboard (sidebar on desktop, tab bar on mobile), and light/dark themes.
 
@@ -62,18 +63,26 @@ Also: email + password or Google sign-in, **no double booking**, a responsive da
 
 **Render environment variables**
 
-| Variable                                        | Value                                         |
-| ----------------------------------------------- | --------------------------------------------- |
-| `DATABASE_URL`                                  | Neon direct connection string                 |
-| `JWT_SECRET`                                    | Long random string (`openssl rand -hex 32`)   |
-| `CLIENT_ORIGIN`                                 | `https://mentor-loop-five.vercel.app`         |
-| `DEMO_MODE`                                     | `true` for the demo, `false` for real clients |
-| `SEED_ON_START`                                 | `true` on the first deploy only, then `false` |
-| `ADMIN_NAME` / `ADMIN_EMAIL` / `ADMIN_PASSWORD` | Mentor account created by the seed            |
-| `GOOGLE_CLIENT_ID`                              | Optional; empty hides the Google button       |
-| `ANTHROPIC_API_KEY`                             | Optional; empty turns the AI coach off        |
-| `ANTHROPIC_MODEL`                               | Default `claude-haiku-5-5`                    |
-| `AI_DAILY_LIMIT`                                | AI requests per user per 24 h (default `10`)  |
+| Variable                                        | Value                                                     |
+| ----------------------------------------------- | --------------------------------------------------------- |
+| `DATABASE_URL`                                  | Neon direct connection string                             |
+| `JWT_SECRET`                                    | Long random string (`openssl rand -hex 32`)               |
+| `CLIENT_ORIGIN`                                 | `https://mentor-loop-five.vercel.app`                     |
+| `DEMO_MODE`                                     | `true` for the demo, `false` for real clients             |
+| `SEED_ON_START`                                 | `true` on the first deploy only, then `false`             |
+| `ADMIN_NAME` / `ADMIN_EMAIL` / `ADMIN_PASSWORD` | Mentor account created by the seed                        |
+| `GOOGLE_CLIENT_ID`                              | Optional; empty hides the Google button                   |
+| `ANTHROPIC_API_KEY`                             | Optional; empty turns the AI coach off                    |
+| `ANTHROPIC_MODEL`                               | Default `claude-haiku-5-5`                                |
+| `AI_DAILY_LIMIT`                                | AI requests per user per 24 h (default `10`)              |
+| `AI_PRICE_INPUT_PER_MTOK` / `_OUTPUT_PER_MTOK`  | USD per million tokens (default Haiku 5.5: `0.1` / `0.5`) |
+| `AI_MONTHLY_BUDGET_USD`                         | Max AI spend per UTC month; `0` = no cap                  |
+
+**Vercel environment variables**
+
+| Variable                | Value                                                                                                        |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `VITE_GOOGLE_CLIENT_ID` | Same as `GOOGLE_CLIENT_ID`. Built into the page, so the Google button doesn't wait for a sleeping Render API |
 
 On start, the container runs `prisma migrate deploy`, then the seed if `SEED_ON_START=true`, then the server.
 

@@ -7,7 +7,7 @@ import { jobsApi } from '../../api/jobs';
 import { useAuth } from '../../auth/AuthContext';
 import { ButtonLink } from '../../components/Button';
 import { PlusIcon } from '../../components/icons';
-import { Skeleton } from '../../components/ui';
+import { Skeleton, usePageTitle } from '../../components/ui';
 import { formatDay, formatLongDay, formatRange, formatTime, isPast } from '../../lib/format';
 import { ScoreRing } from './ai/ReviewResult';
 import { runTitle } from './ai/RunHistory';
@@ -24,6 +24,7 @@ const PIPELINE = ['applied', 'assessment', 'interviewing', 'offer'] as const;
 
 /** Career snapshot: goals and streaks, what needs attention, and what is coming up. */
 export function UserHome() {
+  usePageTitle('Home');
   const { user, config } = useAuth();
   // Progress is computed from jobs and AI runs that change elsewhere: always refetch here.
   const goals = useQuery({

@@ -1,7 +1,8 @@
 import { ButtonLink } from '../components/Button';
-import { EmptyState } from '../components/ui';
+import { EmptyState, usePageTitle } from '../components/ui';
 
 export function NotFound() {
+  usePageTitle('Page not found');
   return (
     <div className="container" style={{ padding: '72px 16px' }}>
       <EmptyState

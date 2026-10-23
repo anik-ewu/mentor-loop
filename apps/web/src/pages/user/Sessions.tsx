@@ -2,11 +2,13 @@ import { Navigate, useLocation, useSearchParams } from 'react-router-dom';
 import { Book } from './Book';
 import { MyBookings } from './MyBookings';
 import s from '../dashboard.module.css';
+import { usePageTitle } from '../../components/ui';
 
 type Tab = 'mine' | 'book';
 
 /** Mentoring sessions: "My sessions" and "Book" in one place. */
 export function Sessions() {
+  usePageTitle('Sessions');
   const [params, setParams] = useSearchParams();
   const tab: Tab = params.get('tab') === 'book' ? 'book' : 'mine';
 

@@ -10,6 +10,17 @@ import type { BookingStatus } from '../api/types';
 import { initials } from '../lib/format';
 import s from './ui.module.css';
 
+/** Sets the browser tab title ("Jobs · MentorLoop") while the page is shown. */
+export function usePageTitle(title?: string) {
+  useEffect(() => {
+    const previous = document.title;
+    document.title = title ? `${title} · MentorLoop` : 'MentorLoop · Job search toolkit';
+    return () => {
+      document.title = previous;
+    };
+  }, [title]);
+}
+
 export function Skeleton({
   height = 16,
   width = '100%',

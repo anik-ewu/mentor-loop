@@ -115,10 +115,13 @@ export async function createReview(actor: Actor, req: ReviewRequest, pdf?: PdfUp
   return startRun(
     { userId: actor.id, role: actor.role, kind: 'resume_review', input, jobId: job?.id },
     async () => {
-      const result = clampReview(
-        await callStructured({ system: REVIEW_SYSTEM, content, schema: reviewOutputSchema }),
-      );
-      return { result, score: result.jobMatch?.score ?? result.overallScore };
+      const { output, usage } = await callStructured({
+        system: REVIEW_SYSTEM,
+        content,
+        schema: reviewOutputSchema,
+      });
+      const result = clampReview(output);
+      return { result, score: result.jobMatch?.score ?? result.overallScore, usage };
     },
   );
 }
@@ -181,13 +184,14 @@ export async function createInterviewQuestions(actor: Actor, req: InterviewReque
       jobId: job.id,
       sourceRunId: source?.review.id,
     },
-    async () => ({
-      result: await callStructured({
+    async () => {
+      const { output, usage } = await callStructured({
         system: INTERVIEW_SYSTEM,
         content,
         schema: interviewOutputSchema,
-      }),
-    }),
+      });
+      return { result: output, usage };
+    },
   );
 }
 
@@ -232,13 +236,14 @@ export async function createCoverLetter(actor: Actor, req: CoverLetterRequest) {
       jobId: job.id,
       sourceRunId: review.id,
     },
-    async () => ({
-      result: await callStructured({
+    async () => {
+      const { output, usage } = await callStructured({
         system: COVER_SYSTEM,
         content,
         schema: coverLetterOutputSchema,
-      }),
-    }),
+      });
+      return { result: output, usage };
+    },
   );
 }
 

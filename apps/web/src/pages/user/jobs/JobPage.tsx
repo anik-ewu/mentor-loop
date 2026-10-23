@@ -8,7 +8,7 @@ import { Button } from '../../../components/Button';
 import { ConfirmModal } from '../../../components/ConfirmModal';
 import { TrashIcon } from '../../../components/icons';
 import { useToast } from '../../../components/Toast';
-import { EmptyState, Skeleton } from '../../../components/ui';
+import { EmptyState, Skeleton, usePageTitle } from '../../../components/ui';
 import { formatDay } from '../../../lib/format';
 import { JobDetailsForm } from './JobDetailsForm';
 import { JobLetterTab, JobPrepTab } from './JobAiTabs';
@@ -35,6 +35,7 @@ const TAB_LABEL: Record<Tab, string> = {
 
 /** /app/jobs/:jobId: everything about one application. */
 export function JobPage() {
+  usePageTitle('Job');
   const { jobId } = useParams() as { jobId: string };
   const { config } = useAuth();
   const navigate = useNavigate();

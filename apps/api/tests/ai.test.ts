@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { env } from '../src/config/env';
 import { prisma } from '../src/lib/prisma';
 import { settleRuns } from '../src/modules/ai/ai.runner';
 import { AiFailure, aiEnabled, callStructured } from '../src/modules/ai/claude';
@@ -9,6 +10,10 @@ vi.mock('../src/modules/ai/claude', async (importOriginal) => {
   const real = await importOriginal<typeof import('../src/modules/ai/claude')>();
   return { ...real, aiEnabled: vi.fn(() => true), callStructured: vi.fn() };
 });
+
+const USAGE = { inputTokens: 1000, outputTokens: 200, costMicros: 200 };
+/** What callStructured resolves to: the parsed output and the tokens it used. */
+const answer = (output: unknown) => ({ output, usage: USAGE });
 
 const PDF = Buffer.from('%PDF-1.7\n1 0 obj << >> endobj\ntrailer << >>\n%%EOF');
 
@@ -52,7 +57,7 @@ async function runReview(agent: Awaited<ReturnType<typeof loginAs>>['agent'], bo
 
 describe('AI resume review', () => {
   it('returns 202 at once, then finishes with a clamped result', async () => {
-    vi.mocked(callStructured).mockResolvedValue(review());
+    vi.mocked(callStructured).mockResolvedValue(answer(review()));
     const { agent } = await loginAs();
 
     const run = await runReview(agent, { text: 'My resume text' });
@@ -64,14 +69,16 @@ describe('AI resume review', () => {
 
   it('matches against a saved job and scores the match', async () => {
     vi.mocked(callStructured).mockResolvedValue(
-      review({
-        jobMatch: {
-          score: 72,
-          matchedSkills: ['Node'],
-          missingSkills: ['Go'],
-          verdict: 'Tailor first',
-        },
-      }),
+      answer(
+        review({
+          jobMatch: {
+            score: 72,
+            matchedSkills: ['Node'],
+            missingSkills: ['Go'],
+            verdict: 'Tailor first',
+          },
+        }),
+      ),
     );
     const { agent } = await loginAs();
     const { body } = await agent
@@ -92,7 +99,7 @@ describe('AI resume review', () => {
   });
 
   it('sends an uploaded PDF as a document block and never stores it', async () => {
-    vi.mocked(callStructured).mockResolvedValue(review());
+    vi.mocked(callStructured).mockResolvedValue(answer(review()));
     const { agent } = await loginAs();
     const res = await agent
       .post('/api/ai/reviews')
@@ -153,7 +160,7 @@ describe('AI resume review', () => {
   });
 
   it('enforces the daily quota (429) but not for the mentor', async () => {
-    vi.mocked(callStructured).mockResolvedValue(review());
+    vi.mocked(callStructured).mockResolvedValue(answer(review()));
     const { agent, user } = await loginAs();
     await prisma.aiRun.createMany({
       data: Array.from({ length: 10 }, () => ({
@@ -173,7 +180,7 @@ describe('AI resume review', () => {
   });
 
   it("doesn't count failed runs toward the quota, but counts ones still processing", async () => {
-    vi.mocked(callStructured).mockResolvedValue(review());
+    vi.mocked(callStructured).mockResolvedValue(answer(review()));
     const { agent, user } = await loginAs();
     const run = (status: 'failed' | 'processing') => ({
       userId: user.id,
@@ -191,6 +198,75 @@ describe('AI resume review', () => {
     await agent.post('/api/ai/reviews').send({ text: 'resume' }).expect(429);
   });
 
+  it('saves tokens and cost on finished runs and on failed runs the model answered', async () => {
+    vi.mocked(callStructured).mockResolvedValueOnce(answer(review()));
+    const { agent } = await loginAs();
+    const done = await runReview(agent, { text: 'resume' });
+    const doneRow = await prisma.aiRun.findUniqueOrThrow({ where: { id: done.id } });
+    expect(doneRow).toMatchObject(USAGE);
+
+    vi.mocked(callStructured).mockRejectedValueOnce(new AiFailure('Cut off.', USAGE));
+    const failed = await runReview(agent, { text: 'resume' });
+    const failedRow = await prisma.aiRun.findUniqueOrThrow({ where: { id: failed.id } });
+    expect(failedRow).toMatchObject({ status: 'failed', ...USAGE });
+  });
+
+  it('counts failed runs that used tokens toward the quota', async () => {
+    const { agent, user } = await loginAs();
+    await prisma.aiRun.createMany({
+      data: Array.from({ length: 10 }, () => ({
+        userId: user.id,
+        kind: 'resume_review' as const,
+        status: 'failed' as const,
+        input: {},
+        model: 'test',
+        outputTokens: 50,
+      })),
+    });
+    await agent.post('/api/ai/reviews').send({ text: 'resume' }).expect(429);
+    expect(await prisma.aiLimitHit.count({ where: { userId: user.id, reason: 'daily' } })).toBe(1);
+  });
+
+  it('limits the shared demo admin like any user', async () => {
+    vi.mocked(callStructured).mockResolvedValue(answer(review()));
+    const demo = request.agent(app);
+    const { body } = await demo.post('/api/auth/demo').send({ role: 'admin' }).expect(200);
+    await prisma.aiRun.createMany({
+      data: Array.from({ length: 10 }, () => ({
+        userId: body.user.id,
+        kind: 'resume_review' as const,
+        status: 'done' as const,
+        input: {},
+        model: 'test',
+      })),
+    });
+    await demo.post('/api/ai/reviews').send({ text: 'resume' }).expect(429);
+  });
+
+  it('pauses AI for everyone once the monthly budget is spent', async () => {
+    vi.mocked(callStructured).mockResolvedValue(answer(review()));
+    const { agent, user } = await loginAs();
+    const previous = env.AI_MONTHLY_BUDGET_USD;
+    env.AI_MONTHLY_BUDGET_USD = 1;
+    try {
+      await prisma.aiRun.create({
+        data: {
+          userId: user.id,
+          kind: 'resume_review',
+          input: {},
+          model: 'test',
+          status: 'done',
+          costMicros: 1_000_000,
+        },
+      });
+      const res = await agent.post('/api/ai/reviews').send({ text: 'resume' }).expect(503);
+      expect(res.body.error.code).toBe('AI_BUDGET');
+      expect(await prisma.aiLimitHit.count({ where: { reason: 'budget' } })).toBe(1);
+    } finally {
+      env.AI_MONTHLY_BUDGET_USD = previous;
+    }
+  });
+
   it('returns 503 and reports aiEnabled=false with no API key', async () => {
     vi.mocked(aiEnabled).mockReturnValue(false);
     const { agent } = await loginAs();
@@ -200,7 +276,7 @@ describe('AI resume review', () => {
   });
 
   it("keeps runs private and won't use another user's job", async () => {
-    vi.mocked(callStructured).mockResolvedValue(review());
+    vi.mocked(callStructured).mockResolvedValue(answer(review()));
     const a = await loginAs('user', 'a@test.dev');
     const b = await loginAs('user', 'b@test.dev');
     const run = await runReview(a.agent, { text: 'resume' });
@@ -218,7 +294,7 @@ describe('AI resume review', () => {
 
 describe('booking with an AI review', () => {
   it("attaches the user's own finished review and shows it to the mentor", async () => {
-    vi.mocked(callStructured).mockResolvedValue(review({ overallScore: 72 }));
+    vi.mocked(callStructured).mockResolvedValue(answer(review({ overallScore: 72 })));
     const [service, slot, slot2] = await Promise.all([
       createService(),
       createSlot(),
@@ -285,7 +361,7 @@ describe('interview questions and cover letters', () => {
   };
 
   async function setup() {
-    vi.mocked(callStructured).mockResolvedValueOnce(review());
+    vi.mocked(callStructured).mockResolvedValueOnce(answer(review()));
     const { agent } = await loginAs('user', 'me@test.dev');
     const { body } = await agent
       .post('/api/jobs')
@@ -297,7 +373,7 @@ describe('interview questions and cover letters', () => {
 
   it('generates questions from the job and the review profile', async () => {
     const { agent, jobId, reviewId } = await setup();
-    vi.mocked(callStructured).mockResolvedValueOnce(questions);
+    vi.mocked(callStructured).mockResolvedValueOnce(answer(questions));
 
     const res = await agent
       .post('/api/ai/interview-questions')
@@ -318,7 +394,7 @@ describe('interview questions and cover letters', () => {
     expect(prompt).toContain('<candidate_profile>');
 
     // The review is optional.
-    vi.mocked(callStructured).mockResolvedValueOnce(questions);
+    vi.mocked(callStructured).mockResolvedValueOnce(answer(questions));
     await agent.post('/api/ai/interview-questions').send({ jobId }).expect(202);
     await settleRuns();
   });
@@ -337,7 +413,7 @@ describe('interview questions and cover letters', () => {
       .send({ jobId: otherJob.job.id, reviewId })
       .expect(400);
 
-    vi.mocked(callStructured).mockResolvedValueOnce(letter);
+    vi.mocked(callStructured).mockResolvedValueOnce(answer(letter));
     const res = await agent
       .post('/api/ai/cover-letters')
       .send({ jobId, reviewId, tone: 'friendly', length: 'short' })

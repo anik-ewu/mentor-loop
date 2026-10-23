@@ -11,6 +11,7 @@ import { goalsRouter } from './modules/goals/goals.routes';
 import { jobsRouter } from './modules/jobs/jobs.routes';
 import { servicesRouter } from './modules/services/services.routes';
 import { slotsRouter } from './modules/slots/slots.routes';
+import { usageRouter } from './modules/usage/usage.routes';
 
 export function createApp() {
   const app = express();
@@ -33,6 +34,7 @@ export function createApp() {
   app.use('/api/jobs', jobsRouter);
   app.use('/api/ai', aiRouter);
   app.use('/api/goals', goalsRouter);
+  app.use('/api/admin/usage', usageRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

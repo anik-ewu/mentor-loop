@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { bookingsApi } from '../../api/bookings';
 import type { BookingStatus } from '../../api/types';
 import { BookingCard } from '../../components/BookingCard';
-import { EmptyState, Skeleton } from '../../components/ui';
+import { EmptyState, Skeleton, usePageTitle } from '../../components/ui';
 import { BookingActions } from './BookingActions';
 import s from '../dashboard.module.css';
 
@@ -16,6 +16,7 @@ const FILTERS: (BookingStatus | 'all')[] = [
 ];
 
 export function AdminBookings() {
+  usePageTitle('Bookings');
   const [filter, setFilter] = useState<BookingStatus | 'all'>('all');
   const { data, isPending } = useQuery({
     queryKey: ['bookings', 'admin', filter],

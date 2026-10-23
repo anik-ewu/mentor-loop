@@ -11,6 +11,10 @@ const envSchema = z.object({
   JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters'),
   CLIENT_ORIGIN: z.string().default('http://localhost:5173'),
   GOOGLE_CLIENT_ID: z.string().default(''),
+  // Optional: empty hides the AI coach features.
+  ANTHROPIC_API_KEY: z.string().default(''),
+  ANTHROPIC_MODEL: z.string().default('claude-haiku-5-5'),
+  AI_DAILY_LIMIT: z.coerce.number().int().min(0).default(10),
   DEMO_MODE: z
     .enum(['true', 'false'])
     .default('false')

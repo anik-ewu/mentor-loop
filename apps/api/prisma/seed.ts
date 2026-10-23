@@ -29,15 +29,15 @@ async function main() {
     await prisma.service.createMany({
       data: [
         {
-          name: 'Resume Review',
+          name: 'Resume Deep-Dive',
           description:
-            'Detailed feedback on your CV and LinkedIn profile: stronger bullet points, the right keywords and a layout recruiters can scan in seconds.',
+            'A mentor goes through your CV and LinkedIn line by line, building on your AI review: stronger bullet points, the right keywords and a layout recruiters can scan in seconds.',
           durationMin: 45,
         },
         {
-          name: 'Career Strategy Call',
+          name: 'Career Guidance Call',
           description:
-            'Talk through your next move: choosing a direction, switching roles or industries, and building a realistic 90-day plan.',
+            'Talk through your next move with a mentor: choosing a direction, switching roles or industries, and building a realistic 90-day job search plan.',
           durationMin: 45,
         },
         {

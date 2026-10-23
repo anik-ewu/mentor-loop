@@ -22,6 +22,9 @@ services:
       JWT_SECRET: ${JWT_SECRET:-change-me-to-a-long-random-string-of-32-plus-chars}
       CLIENT_ORIGIN: ${CLIENT_ORIGIN:-http://localhost:8080}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-claude-haiku-5-5}
+      AI_DAILY_LIMIT: ${AI_DAILY_LIMIT:-10}
       DEMO_MODE: ${DEMO_MODE:-true}
       SEED_ON_START: ${SEED_ON_START:-true}
       ADMIN_NAME: ${ADMIN_NAME:-Alex Morgan}

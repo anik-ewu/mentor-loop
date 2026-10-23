@@ -1,5 +1,5 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
   binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
 
@@ -26,15 +26,19 @@ enum BookingStatus {
 }
 
 model User {
-  id           String    @id @default(uuid())
-  email        String    @unique
+  id           String           @id @default(uuid())
+  email        String           @unique
   passwordHash String?
-  googleId     String?   @unique
+  googleId     String?          @unique
   name         String
   avatarUrl    String?
-  role         Role      @default(user)
-  createdAt    DateTime  @default(now())
+  role         Role             @default(user)
+  timezone     String           @default("UTC")
+  createdAt    DateTime         @default(now())
   bookings     Booking[]
+  jobs         JobApplication[]
+  aiRuns       AiRun[]
+  goals        WeeklyGoal[]
 }
 
 model Service {
@@ -67,10 +71,155 @@ model Booking {
   status    BookingStatus @default(pending)
   createdAt DateTime      @default(now())
 
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  slot    Slot    @relation(fields: [slotId], references: [id], onDelete: Cascade)
-  service Service @relation(fields: [serviceId], references: [id])
+  resumeReviewId String?
+
+  user         User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  slot         Slot    @relation(fields: [slotId], references: [id], onDelete: Cascade)
+  service      Service @relation(fields: [serviceId], references: [id])
+  resumeReview AiRun?  @relation(fields: [resumeReviewId], references: [id], onDelete: SetNull)
 
   @@index([userId])
   @@index([status])
+}
+
+// ---------- Job tracker ----------
+
+enum JobStatus {
+  wishlist
+  applied
+  assessment
+  interviewing
+  offer
+  accepted
+  rejected
+  withdrawn
+  ghosted
+}
+
+enum WorkMode {
+  onsite
+  hybrid
+  remote
+}
+
+model JobApplication {
+  id             String    @id @default(uuid())
+  userId         String
+  company        String
+  title          String
+  jobUrl         String?
+  location       String?
+  workMode       WorkMode?
+  salaryMin      Int?
+  salaryMax      Int?
+  currency       String?
+  source         String?
+  status         JobStatus @default(wishlist)
+  priority       Int       @default(2)
+  appliedAt      DateTime?
+  followUpAt     DateTime?
+  deadline       DateTime?
+  contactName    String?
+  contactEmail   String?
+  jobDescription String?
+  notes          String?
+  coverLetter    String?
+  /// Order inside a Kanban column (lower first).
+  position       Float     @default(0)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  user   User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  events JobEvent[]
+  aiRuns AiRun[]
+
+  @@index([userId, status])
+}
+
+enum JobEventType {
+  status_change
+  interview
+  note
+  follow_up
+}
+
+model JobEvent {
+  id          String       @id @default(uuid())
+  jobId       String
+  type        JobEventType
+  fromStatus  JobStatus?
+  toStatus    JobStatus?
+  title       String?
+  scheduledAt DateTime?
+  outcome     String?
+  notes       String?
+  createdAt   DateTime     @default(now())
+
+  job JobApplication @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([jobId, createdAt])
+}
+
+// ---------- AI coach ----------
+
+enum AiKind {
+  resume_review
+  interview_questions
+  cover_letter
+}
+
+enum AiStatus {
+  processing
+  done
+  failed
+}
+
+/// One row per AI request, whatever its kind: one quota, one runner, one polling endpoint.
+model AiRun {
+  id          String    @id @default(uuid())
+  userId      String
+  kind        AiKind
+  status      AiStatus  @default(processing)
+  jobId       String?
+  /// The resume review a cover letter or question set was built from.
+  sourceRunId String?
+  input       Json
+  result      Json?
+  score       Int?
+  error       String?
+  model       String
+  createdAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  job       JobApplication? @relation(fields: [jobId], references: [id], onDelete: SetNull)
+  sourceRun AiRun?          @relation("AiRunSource", fields: [sourceRunId], references: [id], onDelete: SetNull)
+  derived   AiRun[]         @relation("AiRunSource")
+  bookings  Booking[]
+
+  @@index([userId, kind, createdAt])
+  @@index([status, createdAt])
+}
+
+// ---------- Weekly goals ----------
+
+enum GoalMetric {
+  applications
+  interviews
+  follow_ups
+  resume_matches
+  interview_preps
+}
+
+model WeeklyGoal {
+  id        String     @id @default(uuid())
+  userId    String
+  /// Monday 00:00 in the user's timezone, stored as UTC.
+  weekStart DateTime
+  metric    GoalMetric
+  target    Int
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, weekStart, metric])
 }

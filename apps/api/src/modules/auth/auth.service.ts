@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs';
 import type { User } from '@prisma/client';
 import { prisma } from '../../lib/prisma';
-import { conflict, notFound, unauthorized } from '../../lib/errors';
+import { conflict, unauthorized } from '../../lib/errors';
 import { googleVerifier } from './google';
 import type { LoginInput, SignupInput } from './auth.schema';
 
@@ -58,10 +58,19 @@ export async function loginWithGoogle(credential: string) {
   });
 }
 
-export async function demoLogin(role: keyof typeof DEMO_EMAILS) {
-  const user = await prisma.user.findUnique({ where: { email: DEMO_EMAILS[role] } });
-  if (!user) throw notFound('Demo account (run the seed script)');
-  return user;
+const DEMO_NAMES = { user: 'Demo User', admin: 'Demo Mentor' } as const;
+
+/**
+ * Created on first use, so demo mode works when ADMIN_EMAIL is a real address and the seed did
+ * not create admin@mentorloop.dev. No password: only this endpoint (off when DEMO_MODE=false)
+ * can sign in to an account it created.
+ */
+export function demoLogin(role: keyof typeof DEMO_EMAILS) {
+  return prisma.user.upsert({
+    where: { email: DEMO_EMAILS[role] },
+    update: {},
+    create: { email: DEMO_EMAILS[role], name: DEMO_NAMES[role], role },
+  });
 }
 
 export const findUser = (id: string) => prisma.user.findUnique({ where: { id } });

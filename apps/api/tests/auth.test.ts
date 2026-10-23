@@ -84,4 +84,13 @@ describe('auth', () => {
     const res = await request(app).post('/api/auth/demo').send({ role: 'admin' }).expect(200);
     expect(res.body.user.role).toBe('admin');
   });
+
+  it('demo login creates a password-less demo mentor when the seed did not', async () => {
+    const res = await request(app).post('/api/auth/demo').send({ role: 'admin' }).expect(200);
+    expect(res.body.user).toMatchObject({ email: 'admin@mentorloop.dev', role: 'admin' });
+    await request(app)
+      .post('/api/auth/login')
+      .send({ email: 'admin@mentorloop.dev', password: 'admin12345' })
+      .expect(401);
+  });
 });

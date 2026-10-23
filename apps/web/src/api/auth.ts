@@ -12,6 +12,9 @@ export const authApi = {
     api<UserRes>('/auth/signup', 'POST', body).then((r) => r.user),
   google: (credential: string) =>
     api<UserRes>('/auth/google', 'POST', { credential }).then((r) => r.user),
+  forgotPassword: (email: string) => api<void>('/auth/forgot-password', 'POST', { email }),
+  resetPassword: (body: { token: string; password: string }) =>
+    api<UserRes>('/auth/reset-password', 'POST', body).then((r) => r.user),
   demo: (role: Role) => api<UserRes>('/auth/demo', 'POST', { role }).then((r) => r.user),
   logout: () => api<void>('/auth/logout', 'POST'),
   updateMe: (body: { timezone?: string }) =>

@@ -7,6 +7,8 @@ interface AuthState {
   user: User | null;
   loading: boolean;
   config: AuthConfig;
+  /** False until /auth/config answers; `config` holds safe defaults until then. */
+  configLoaded: boolean;
   /** Call after any successful login/signup. */
   setUser: (user: User | null) => void;
   logout: () => Promise<void>;
@@ -70,7 +72,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       value={{
         user: me.data ?? null,
         loading: me.isPending,
-        config: config.data ?? { googleClientId: null, demoMode: false, aiEnabled: false },
+        config: config.data ?? {
+          googleClientId: null,
+          demoMode: false,
+          aiEnabled: false,
+          passwordResetEnabled: false,
+        },
+        configLoaded: config.isSuccess,
         setUser,
         logout,
       }}

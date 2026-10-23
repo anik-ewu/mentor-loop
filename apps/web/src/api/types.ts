@@ -62,6 +62,7 @@ export interface AuthConfig {
   googleClientId: string | null;
   demoMode: boolean;
   aiEnabled: boolean;
+  passwordResetEnabled: boolean;
 }
 
 // ---------- Job tracker ----------

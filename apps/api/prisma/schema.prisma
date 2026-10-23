@@ -26,20 +26,23 @@ enum BookingStatus {
 }
 
 model User {
-  id           String           @id @default(uuid())
-  email        String           @unique
-  passwordHash String?
-  googleId     String?          @unique
-  name         String
-  avatarUrl    String?
-  role         Role             @default(user)
-  timezone     String           @default("UTC")
-  createdAt    DateTime         @default(now())
-  bookings     Booking[]
-  jobs         JobApplication[]
-  aiRuns       AiRun[]
-  goals        WeeklyGoal[]
-  aiLimitHits  AiLimitHit[]
+  id                String           @id @default(uuid())
+  email             String           @unique
+  passwordHash      String?
+  googleId          String?          @unique
+  /// SHA-256 of the emailed reset token; the raw token is never stored.
+  resetTokenHash    String?          @unique
+  resetTokenExpires DateTime?
+  name              String
+  avatarUrl         String?
+  role              Role             @default(user)
+  timezone          String           @default("UTC")
+  createdAt         DateTime         @default(now())
+  bookings          Booking[]
+  jobs              JobApplication[]
+  aiRuns            AiRun[]
+  goals             WeeklyGoal[]
+  aiLimitHits       AiLimitHit[]
 }
 
 model Service {

@@ -20,6 +20,9 @@ const envSchema = z.object({
   AI_PRICE_OUTPUT_PER_MTOK: z.coerce.number().min(0).default(0.5),
   // Spend cap per calendar month (UTC) across all users; 0 = no cap.
   AI_MONTHLY_BUDGET_USD: z.coerce.number().min(0).default(0),
+  // Optional: Resend API key for password reset emails. Empty logs the reset link instead.
+  RESEND_API_KEY: z.string().default(''),
+  EMAIL_FROM: z.string().default('MentorLoop <onboarding@resend.dev>'),
   DEMO_MODE: z
     .enum(['true', 'false'])
     .default('false')

@@ -7,6 +7,7 @@ import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 import { aiRouter } from './modules/ai/ai.routes';
 import { authRouter } from './modules/auth/auth.routes';
 import { bookingsRouter } from './modules/bookings/bookings.routes';
+import { goalsRouter } from './modules/goals/goals.routes';
 import { jobsRouter } from './modules/jobs/jobs.routes';
 import { servicesRouter } from './modules/services/services.routes';
 import { slotsRouter } from './modules/slots/slots.routes';
@@ -31,6 +32,7 @@ export function createApp() {
   app.use('/api/bookings', bookingsRouter);
   app.use('/api/jobs', jobsRouter);
   app.use('/api/ai', aiRouter);
+  app.use('/api/goals', goalsRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

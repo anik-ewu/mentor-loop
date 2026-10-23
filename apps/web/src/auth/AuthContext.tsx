@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, type ReactNode } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { authApi } from '../api/auth';
 import type { AuthConfig, User } from '../api/types';
@@ -33,6 +33,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     [qc],
   );
+
+  // Goals and streaks use the user's local week, so keep the stored timezone in sync.
+  const user = me.data;
+  useEffect(() => {
+    if (!user) return;
+    let tz: string;
+    try {
+      tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    } catch {
+      return;
+    }
+    if (!tz || tz === user.timezone) return;
+    authApi
+      .updateMe({ timezone: tz })
+      .then((updated) => {
+        qc.setQueryData(['me'], updated);
+        qc.invalidateQueries({ queryKey: ['goals'] });
+      })
+      .catch(() => {
+        /* not critical: goals fall back to the stored timezone */
+      });
+  }, [user, qc]);
 
   const logout = useCallback(async () => {
     await authApi.logout();

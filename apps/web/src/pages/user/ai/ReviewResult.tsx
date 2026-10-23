@@ -65,7 +65,7 @@ function BookCta({ reviewId }: { reviewId: string }) {
   const services = useQuery({ queryKey: ['services', 'active'], queryFn: servicesApi.listActive });
   const deepDive =
     services.data?.find((sv) => /resume/i.test(sv.name)) ?? services.data?.[0] ?? null;
-  const params = new URLSearchParams({ review: reviewId });
+  const params = new URLSearchParams({ tab: 'book', review: reviewId });
   if (deepDive) params.set('service', deepDive.id);
   return (
     <div className={s.cta}>
@@ -73,7 +73,7 @@ function BookCta({ reviewId }: { reviewId: string }) {
         <h3>Want a human to go deeper?</h3>
         <p>Book a Resume Deep-Dive and your mentor gets this review before the call.</p>
       </div>
-      <ButtonLink to={`/app/book?${params}`} variant="light">
+      <ButtonLink to={`/app/sessions?${params}`} variant="light">
         Book a Resume Deep-Dive with this review <ArrowRightIcon />
       </ButtonLink>
     </div>

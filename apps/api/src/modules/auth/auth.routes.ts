@@ -5,9 +5,9 @@ import { env } from '../../config/env';
 import { aiEnabled } from '../ai/claude';
 import { notFound } from '../../lib/errors';
 import { signToken } from '../../lib/jwt';
-import { AUTH_COOKIE, optionalAuth } from '../../middleware/auth';
+import { AUTH_COOKIE, currentUserId, optionalAuth, requireAuth } from '../../middleware/auth';
 import { validateBody } from '../../middleware/validate';
-import { demoSchema, googleSchema, loginSchema, signupSchema } from './auth.schema';
+import { demoSchema, googleSchema, loginSchema, signupSchema, updateMeSchema } from './auth.schema';
 import * as authService from './auth.service';
 
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
@@ -69,4 +69,10 @@ authRouter.post('/logout', (req, res) => {
 authRouter.get('/me', optionalAuth, async (req, res) => {
   const user = req.auth && (await authService.findUser(req.auth.sub));
   res.json({ user: user ? authService.toPublicUser(user) : null });
+});
+
+/** Updates the current user's settings (for now: the timezone goals and streaks use). */
+authRouter.patch('/me', requireAuth, validateBody(updateMeSchema), async (req, res) => {
+  const user = await authService.updateProfile(currentUserId(req), req.body);
+  res.json({ user: authService.toPublicUser(user) });
 });

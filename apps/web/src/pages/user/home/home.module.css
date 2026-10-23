@@ -1,0 +1,200 @@
+.streaks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.streak {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: var(--radius-full);
+  background: var(--warning-soft);
+  color: var(--warning);
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.streakMuted {
+  background: var(--surface-2);
+  color: var(--text-muted);
+}
+
+.grid {
+  display: grid;
+  gap: var(--space-4);
+}
+
+@media (min-width: 900px) {
+  .grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .wide {
+    grid-column: span 2;
+  }
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  min-width: 0;
+}
+
+.cardHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.cardHead h2 {
+  font-size: 16px;
+}
+
+.cardHead a,
+.link {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.goal {
+  display: grid;
+  gap: 6px;
+}
+
+.goalHead {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.goalHead span:last-child {
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.track {
+  height: 10px;
+  border-radius: var(--radius-full);
+  background: var(--surface-2);
+  overflow: hidden;
+}
+
+.fill {
+  height: 100%;
+  border-radius: inherit;
+  background: var(--brand-gradient);
+  transition: width 0.8s var(--ease-out);
+}
+
+.fillDone {
+  background: var(--success);
+}
+
+.empty {
+  display: grid;
+  gap: var(--space-2);
+  justify-items: start;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-2);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 14px;
+}
+
+.row:hover {
+  outline: 1px solid var(--border-strong);
+}
+
+.row strong {
+  display: block;
+}
+
+.row small {
+  color: var(--text-muted);
+}
+
+.pipeline {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-2);
+}
+
+.pipeline a {
+  padding: var(--space-3);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.pipeline span {
+  display: block;
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.pipeline strong {
+  font-family: var(--font-display);
+  font-size: 24px;
+}
+
+.score {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.score p {
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+/* ---------- Edit goals ---------- */
+.goalRow {
+  display: grid;
+  grid-template-columns: 1fr 96px;
+  gap: var(--space-3);
+  align-items: center;
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.goalRow label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.goalRow input[type='checkbox'] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--brand);
+}

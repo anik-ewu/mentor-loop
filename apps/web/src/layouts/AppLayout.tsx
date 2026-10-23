@@ -10,7 +10,6 @@ import {
   LayersIcon,
   ListIcon,
   LogoutIcon,
-  PlusIcon,
   SparkIcon,
 } from '../components/icons';
 import { Avatar, Logo, ThemeToggle } from '../components/ui';
@@ -28,8 +27,7 @@ const USER_NAV: NavItem[] = [
   { to: '/app', label: 'Home', icon: HomeIcon, end: true },
   { to: '/app/jobs', label: 'Jobs', icon: BriefcaseIcon },
   { to: '/app/ai', label: 'AI Coach', icon: SparkIcon },
-  { to: '/app/book', label: 'Book', icon: PlusIcon },
-  { to: '/app/bookings', label: 'My sessions', icon: ListIcon },
+  { to: '/app/sessions', label: 'Sessions', icon: CalendarIcon },
 ];
 
 const ADMIN_NAV: NavItem[] = [

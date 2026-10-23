@@ -14,4 +14,6 @@ export const authApi = {
     api<UserRes>('/auth/google', 'POST', { credential }).then((r) => r.user),
   demo: (role: Role) => api<UserRes>('/auth/demo', 'POST', { role }).then((r) => r.user),
   logout: () => api<void>('/auth/logout', 'POST'),
+  updateMe: (body: { timezone?: string }) =>
+    api<UserRes>('/auth/me', 'PATCH', body).then((r) => r.user),
 };

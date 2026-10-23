@@ -7,6 +7,8 @@ export interface User {
   name: string;
   avatarUrl: string | null;
   role: Role;
+  /** IANA timezone used for weekly goals and streaks. */
+  timezone: string;
 }
 
 export interface Service {
@@ -236,4 +238,32 @@ export interface CoverLetterResult {
   paragraphs: string[];
   closing: string;
   highlightsUsed: string[];
+}
+
+// ---------- Goals ----------
+
+export type GoalMetric =
+  'applications' | 'interviews' | 'follow_ups' | 'resume_matches' | 'interview_preps';
+
+export interface GoalProgress {
+  metric: GoalMetric;
+  target: number;
+  actual: number;
+  met: boolean;
+}
+
+export interface CurrentGoals {
+  timezone: string;
+  weekStart: string;
+  weekEnd: string;
+  carriedOver: boolean;
+  goals: GoalProgress[];
+  allMet: boolean;
+  streaks: { weekly: number; daily: number; activeToday: boolean };
+}
+
+export interface GoalWeek {
+  weekStart: string;
+  goals: GoalProgress[];
+  allMet: boolean;
 }

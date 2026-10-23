@@ -15,23 +15,23 @@ This spec describes **what** to build and **how we know it's done**. File-level 
 
 **Current state (branch `claude/confident-tesla-18fq7p`)**
 
-- Done: the database schema and migration for every feature below (`apps/api/prisma/schema.prisma`, migration `career_toolkit`), the AI env vars, the renamed services and demo seed data, dev tooling (F0), the job tracker (F1), the AI runner (F2), resume review / job match (F3), the booking merge (F4), interview questions (F5) and cover letters (F6).
-- Not started: everything else.
+- Done: the database schema and migration for every feature below (`apps/api/prisma/schema.prisma`, migration `career_toolkit`), the AI env vars, the renamed services and demo seed data, dev tooling (F0), the job tracker (F1), the AI runner (F2), resume review / job match (F3), the booking merge (F4), interview questions (F5), cover letters (F6), weekly goals and streaks (F7), the Home snapshot and navigation (F8), and the landing, privacy and README refresh (F9).
+- Left from the Definition of Done: new README screenshots, and confirming `docker compose up --build`.
 
 ## 2. Feature status
 
-| #   | Feature                                       | Priority | Status      | Plan step |
-| --- | --------------------------------------------- | -------- | ----------- | --------- |
-| F0  | Dev tooling: `npm run dev` starts API and web | P0       | Done        | 2         |
-| F1  | Job tracker                                   | P0       | Done        | 2         |
-| F2  | AI shared runner (quota, async, errors)       | P1       | Done        | 3         |
-| F3  | AI resume review / job match                  | P1       | Done        | 3         |
-| F4  | Booking merge (attach AI review to a session) | P1       | Done        | 3         |
-| F5  | AI interview questions                        | P1       | Done        | 4         |
-| F6  | AI cover letter                               | P1       | Done        | 4         |
-| F7  | Weekly goals and streaks                      | P1       | Not started | 5         |
-| F8  | Home snapshot and navigation                  | P1       | Not started | 5         |
-| F9  | Landing, Privacy and README refresh           | P2       | Not started | 5         |
+| #   | Feature                                       | Priority | Status | Plan step |
+| --- | --------------------------------------------- | -------- | ------ | --------- |
+| F0  | Dev tooling: `npm run dev` starts API and web | P0       | Done   | 2         |
+| F1  | Job tracker                                   | P0       | Done   | 2         |
+| F2  | AI shared runner (quota, async, errors)       | P1       | Done   | 3         |
+| F3  | AI resume review / job match                  | P1       | Done   | 3         |
+| F4  | Booking merge (attach AI review to a session) | P1       | Done   | 3         |
+| F5  | AI interview questions                        | P1       | Done   | 4         |
+| F6  | AI cover letter                               | P1       | Done   | 4         |
+| F7  | Weekly goals and streaks                      | P1       | Done   | 5         |
+| F8  | Home snapshot and navigation                  | P1       | Done   | 5         |
+| F9  | Landing, Privacy and README refresh           | P2       | Done   | 5         |
 
 **Backlog (not in this revamp)**
 

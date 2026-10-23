@@ -7,14 +7,15 @@ import type { LoginInput, SignupInput } from './auth.schema';
 
 export const DEMO_EMAILS = { user: 'demo@mentorloop.dev', admin: 'admin@mentorloop.dev' } as const;
 
-export type PublicUser = Pick<User, 'id' | 'email' | 'name' | 'avatarUrl' | 'role'>;
+export type PublicUser = Pick<User, 'id' | 'email' | 'name' | 'avatarUrl' | 'role' | 'timezone'>;
 
-export const toPublicUser = ({ id, email, name, avatarUrl, role }: User): PublicUser => ({
+export const toPublicUser = ({ id, email, name, avatarUrl, role, timezone }: User): PublicUser => ({
   id,
   email,
   name,
   avatarUrl,
   role,
+  timezone,
 });
 
 export async function signup(input: SignupInput) {
@@ -74,3 +75,6 @@ export function demoLogin(role: keyof typeof DEMO_EMAILS) {
 }
 
 export const findUser = (id: string) => prisma.user.findUnique({ where: { id } });
+
+export const updateProfile = (id: string, data: { timezone?: string }) =>
+  prisma.user.update({ where: { id }, data });

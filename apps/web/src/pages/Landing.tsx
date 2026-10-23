@@ -16,23 +16,35 @@ const SERVICE_ICONS = ['📄', '🧭', '🎯', '💡', '🚀'];
 
 const STEPS = [
   {
-    title: 'Choose a session',
-    text: 'Resume review, career strategy or interview practice. Each one has a clear focus and length.',
+    title: 'Track every job',
+    text: 'Save a job in seconds, drag it across the board as it moves, and get reminded when to follow up.',
   },
   {
-    title: 'Pick a time',
-    text: 'See live availability and book the slot that suits you. No back-and-forth emails.',
+    title: 'Match and prepare with AI',
+    text: 'Score your resume against the job, fix the gaps, practise likely interview questions and draft a cover letter.',
   },
   {
-    title: 'Get your plan',
-    text: 'Meet over video, get honest feedback, and leave with next steps you can act on right away.',
+    title: 'Keep momentum',
+    text: 'Set small weekly goals, like 5 applications and 2 interviews, and keep your streak alive.',
+  },
+  {
+    title: 'Book a mentor',
+    text: 'When you need a human, book a 1:1 session. Your mentor sees your AI review before the call.',
   },
 ];
 
 const FAQ = [
   {
     q: 'Who is MentorLoop for?',
-    a: 'Students, graduates and working professionals who want a stronger CV, a clearer career direction, or practice before an important interview.',
+    a: 'Anyone running a job search: students, graduates and working professionals who want to stay organised, apply with a stronger resume and walk into interviews prepared.',
+  },
+  {
+    q: 'What does the AI coach do with my resume?',
+    a: 'It compares your resume with a job you saved and gives you a match score, missing skills, prioritised fixes and stronger bullet points. Your PDF is sent to our AI provider (Anthropic) for that review and is not stored; you can delete any result.',
+  },
+  {
+    q: 'Is the AI free to use?',
+    a: 'Yes, within a daily limit per account, so the service stays fast and fair for everyone.',
   },
   {
     q: 'How do sessions work?',
@@ -139,7 +151,12 @@ function WeekAvailability() {
 export function Landing() {
   const { user } = useAuth();
   const services = useQuery({ queryKey: ['services', 'active'], queryFn: servicesApi.listActive });
-  const bookTo = user ? (user.role === 'admin' ? homeFor(user) : '/app/book') : '/signup';
+  const bookTo = user
+    ? user.role === 'admin'
+      ? homeFor(user)
+      : '/app/sessions?tab=book'
+    : '/signup';
+  const startTo = user ? homeFor(user) : '/signup';
 
   return (
     <>
@@ -151,21 +168,21 @@ export function Landing() {
         <div className={`container ${s.heroGrid}`}>
           <div className="animate-in">
             <span className={s.eyebrow}>
-              <PulseDot size={8} /> Now booking 1:1 sessions
+              <PulseDot size={8} /> Job tracker, AI coach and real mentors
             </span>
             <h1 className={s.title}>
-              Career mentoring that <span className="gradient-text">moves you forward</span>
+              Run your job search <span className="gradient-text">like a pro</span>
             </h1>
             <p className={s.lead}>
-              Book a 1:1 session for a resume review, a career strategy call or a mock interview.
-              Pick a time that suits you, share your goals, and leave with a clear plan.
+              Track every application in one board, match your resume to each job with AI, prepare
+              for the interviews, and book a mentor when you need a human in your corner.
             </p>
             <div className={s.ctas}>
-              <ButtonLink to={bookTo} variant="primary" size="lg">
-                Book a session <ArrowRightIcon />
+              <ButtonLink to={startTo} variant="primary" size="lg">
+                Start tracking jobs <ArrowRightIcon />
               </ButtonLink>
-              <ButtonLink to="/#services" size="lg" variant="ghost">
-                See services
+              <ButtonLink to={bookTo} size="lg" variant="ghost">
+                Book a mentor
               </ButtonLink>
             </div>
             {!user && (
@@ -174,9 +191,9 @@ export function Landing() {
               </div>
             )}
             <div className={s.trust}>
+              <span>Free job tracker</span>
+              <span>AI resume match</span>
               <span>1:1 video sessions</span>
-              <span>Free cancellation</span>
-              <span>Book in under a minute</span>
             </div>
           </div>
           <div className="animate-in" style={{ animationDelay: '150ms' }}>
@@ -187,9 +204,12 @@ export function Landing() {
 
       <section id="services" className={`container ${s.section}`}>
         <Reveal className={s.sectionHead}>
-          <span className={s.kicker}>Services</span>
-          <h2>Pick the session you need</h2>
-          <p>Every session is 1:1, focused on your goals, and ends with concrete next steps.</p>
+          <span className={s.kicker}>Mentoring</span>
+          <h2>When you need a human</h2>
+          <p>
+            Every session is 1:1, focused on your goals, and ends with concrete next steps. Attach
+            an AI review and your mentor arrives prepared.
+          </p>
         </Reveal>
         <div className={s.services}>
           {services.isPending &&
@@ -204,7 +224,9 @@ export function Landing() {
                 <p>{svc.description}</p>
                 <div className={s.serviceMeta}>
                   <span>⏱ {svc.durationMin} min</span>
-                  <Link to={user?.role === 'user' ? `/app/book?service=${svc.id}` : bookTo}>
+                  <Link
+                    to={user?.role === 'user' ? `/app/sessions?tab=book&service=${svc.id}` : bookTo}
+                  >
                     Book this <ArrowRightIcon width={16} height={16} />
                   </Link>
                 </div>
@@ -217,7 +239,7 @@ export function Landing() {
       <section id="how" className={`container ${s.section}`}>
         <Reveal className={s.sectionHead}>
           <span className={s.kicker}>How it works</span>
-          <h2>From booking to plan in three steps</h2>
+          <h2>From saved job to offer</h2>
         </Reveal>
         <div className={s.steps}>
           {STEPS.map((step, i) => (
@@ -248,9 +270,9 @@ export function Landing() {
       <div className="container">
         <Reveal className={s.cta}>
           <h2>Ready for your next step?</h2>
-          <p>Choose a time that works for you. Booking takes less than a minute.</p>
-          <ButtonLink to={bookTo} variant="light" size="lg">
-            Book your session <ArrowRightIcon />
+          <p>Add your first job in seconds and see how your resume matches it.</p>
+          <ButtonLink to={startTo} variant="light" size="lg">
+            Get started free <ArrowRightIcon />
           </ButtonLink>
           <span className={`${s.orb} ${s.orbA}`} aria-hidden />
           <span className={`${s.orb} ${s.orbB}`} aria-hidden />

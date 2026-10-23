@@ -15,7 +15,7 @@ type Tab = 'upcoming' | 'past';
 const isUpcoming = (b: Booking) =>
   ['pending', 'confirmed'].includes(b.status) && !isPast(b.slot.startsAt);
 
-export function MyBookings() {
+export function MyBookings({ embedded = false }: { embedded?: boolean }) {
   const [tab, setTab] = useState<Tab>('upcoming');
   const { data: bookings, isPending } = useQuery({
     queryKey: ['bookings', 'mine'],
@@ -31,15 +31,17 @@ export function MyBookings() {
 
   return (
     <div className="animate-in">
-      <div className="page-header">
-        <div>
-          <h1>My sessions</h1>
-          <p>Everything you have booked, in one place.</p>
+      {!embedded && (
+        <div className="page-header">
+          <div>
+            <h1>My sessions</h1>
+            <p>Everything you have booked, in one place.</p>
+          </div>
+          <ButtonLink to="/app/sessions?tab=book" variant="primary">
+            <PlusIcon /> New booking
+          </ButtonLink>
         </div>
-        <ButtonLink to="/app/book" variant="primary">
-          <PlusIcon /> New booking
-        </ButtonLink>
-      </div>
+      )}
 
       <div className={s.tabs} role="tablist">
         {(['upcoming', 'past'] as const).map((t) => (
@@ -70,7 +72,7 @@ export function MyBookings() {
             }
             action={
               tab === 'upcoming' && (
-                <ButtonLink to="/app/book" variant="primary">
+                <ButtonLink to="/app/sessions?tab=book" variant="primary">
                   Book a session
                 </ButtonLink>
               )

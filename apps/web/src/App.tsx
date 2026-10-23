@@ -12,9 +12,8 @@ import { Privacy, Terms } from './pages/Legal';
 import { NotFound } from './pages/NotFound';
 import { AiCoach } from './pages/user/ai/AiCoach';
 import { RunPage } from './pages/user/ai/RunPage';
-import { Book } from './pages/user/Book';
 import { Jobs } from './pages/user/jobs/Jobs';
-import { MyBookings } from './pages/user/MyBookings';
+import { Sessions, SessionsRedirect } from './pages/user/Sessions';
 import { UserHome } from './pages/user/UserHome';
 
 export function App() {
@@ -41,8 +40,9 @@ export function App() {
         <Route path="jobs" element={<Jobs />} />
         <Route path="ai" element={<AiCoach />} />
         <Route path="ai/:runId" element={<RunPage />} />
-        <Route path="book" element={<Book />} />
-        <Route path="bookings" element={<MyBookings />} />
+        <Route path="sessions" element={<Sessions />} />
+        <Route path="book" element={<SessionsRedirect tab="book" />} />
+        <Route path="bookings" element={<SessionsRedirect />} />
       </Route>
 
       <Route

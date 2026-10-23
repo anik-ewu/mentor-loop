@@ -17,7 +17,7 @@ import s from './Book.module.css';
 
 const STEPS = ['Service', 'Time', 'Details'] as const;
 
-export function Book() {
+export function Book({ embedded = false }: { embedded?: boolean }) {
   const [params] = useSearchParams();
   const qc = useQueryClient();
   const toast = useToast();
@@ -87,7 +87,7 @@ export function Book() {
           {formatTime(booked.slot.startsAt)}. You'll see it as confirmed once the mentor accepts.
         </p>
         <div className="row" style={{ justifyContent: 'center', marginTop: 8 }}>
-          <ButtonLink to="/app/bookings" variant="primary">
+          <ButtonLink to="/app/sessions" variant="primary">
             View my sessions
           </ButtonLink>
           <ButtonLink to="/app">Back to home</ButtonLink>
@@ -106,12 +106,14 @@ export function Book() {
 
   return (
     <div className="animate-in">
-      <div className="page-header">
-        <div>
-          <h1>Book a session</h1>
-          <p>Three quick steps and you're in.</p>
+      {!embedded && (
+        <div className="page-header">
+          <div>
+            <h1>Book a session</h1>
+            <p>Three quick steps and you're in.</p>
+          </div>
         </div>
-      </div>
+      )}
 
       <nav className={s.steps} aria-label="Booking steps">
         {STEPS.map((label, i) => (

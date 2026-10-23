@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { isValidTimezone } from '../../lib/timezone';
 
 export const signupSchema = z.object({
   name: z.string().trim().min(2, 'Name is too short').max(80),
@@ -17,6 +18,11 @@ export const googleSchema = z.object({
 
 export const demoSchema = z.object({
   role: z.enum(['user', 'admin']),
+});
+
+export const updateMeSchema = z.object({
+  /** IANA name from the browser, e.g. "Asia/Dhaka". */
+  timezone: z.string().max(64).refine(isValidTimezone, 'Unknown timezone').optional(),
 });
 
 export type SignupInput = z.infer<typeof signupSchema>;

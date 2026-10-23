@@ -35,4 +35,9 @@ export const aiApi = {
   },
   run: <R>(id: string) => api<{ run: AiRun<R> }>(`/ai/runs/${id}`).then((r) => r.run),
   remove: (id: string) => api<void>(`/ai/runs/${id}`, 'DELETE'),
+  setPracticed: (id: string, key: string, done: boolean) =>
+    api<{ run: { id: string; practiced: string[] } }>(`/ai/runs/${id}/practiced`, 'PATCH', {
+      key,
+      done,
+    }).then((r) => r.run.practiced),
 };

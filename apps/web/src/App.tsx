@@ -12,6 +12,7 @@ import { Privacy, Terms } from './pages/Legal';
 import { NotFound } from './pages/NotFound';
 import { AiCoach } from './pages/user/ai/AiCoach';
 import { RunPage } from './pages/user/ai/RunPage';
+import { JobPage } from './pages/user/jobs/JobPage';
 import { Jobs } from './pages/user/jobs/Jobs';
 import { Sessions, SessionsRedirect } from './pages/user/Sessions';
 import { UserHome } from './pages/user/UserHome';
@@ -38,6 +39,7 @@ export function App() {
       >
         <Route index element={<UserHome />} />
         <Route path="jobs" element={<Jobs />} />
+        <Route path="jobs/:jobId" element={<JobPage />} />
         <Route path="ai" element={<AiCoach />} />
         <Route path="ai/:runId" element={<RunPage />} />
         <Route path="sessions" element={<Sessions />} />

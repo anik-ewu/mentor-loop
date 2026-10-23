@@ -121,7 +121,7 @@ export function UserHome() {
             <ul className={s.rows}>
               {st.followUpsDue.slice(0, 4).map((j) => (
                 <li key={j.id}>
-                  <Link to={`/app/jobs?job=${j.id}`} className={s.row}>
+                  <Link to={`/app/jobs/${j.id}`} className={s.row}>
                     <span>
                       <strong>{j.company}</strong>
                       <small>{j.title}</small>
@@ -182,7 +182,7 @@ export function UserHome() {
             <ul className={s.rows}>
               {st.upcomingInterviews.map((i) => (
                 <li key={i.id}>
-                  <Link to={`/app/jobs?job=${i.job.id}`} className={s.row}>
+                  <Link to={`/app/jobs/${i.job.id}?tab=timeline`} className={s.row}>
                     <span>
                       <strong>{i.job.company}</strong>
                       <small>{i.title ?? 'Interview'}</small>

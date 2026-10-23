@@ -13,7 +13,7 @@
 ## Features
 
 - **Job tracker:** a Kanban board (drag and drop, or a stage select on touch and keyboard) and a searchable table. Each job has a timeline of stage changes, interview rounds, follow-ups and notes. Stats show the response rate, interviews, offers and which follow-ups are due.
-- **AI coach** (Claude): upload a PDF or paste your resume and get an overall, ATS and **job match** score, prioritised fixes, before → after bullet rewrites, missing keywords and red flags. From a saved job it also writes **interview questions** (some about your own projects) and drafts an editable **cover letter** you can save to the job.
+- **AI coach** (Claude): upload a PDF or paste your resume and get an overall, ATS and **job match** score, prioritised fixes, before → after bullet rewrites, missing keywords and red flags. From a saved job it also writes **interview questions** (some about your own projects, with a checkbox to track which ones you have practised) and drafts an editable **cover letter** you can save to the job.
 - **Weekly goals and streaks:** targets like "5 applications, 2 interviews", with progress computed from what you log, in your own timezone; a daily activity streak and a weekly "all goals met" streak.
 - **Mentoring:** book a Resume Deep-Dive, Career Guidance Call or Mock Interview; attach an AI review so the mentor arrives prepared. The mentor confirms requests, publishes availability and manages services.
 - **Demo mode** lets visitors try both sides with one click ("Try as client" / "Try as mentor").
@@ -99,7 +99,7 @@ npm run db:generate && npm run db:migrate && npm run db:seed
 npm run dev                 # API on :4000, web on :5173 (proxies /api)
 ```
 
-Demo accounts (local seed): mentor `admin@mentorloop.dev` / `admin12345`, client `demo@mentorloop.dev` / `demo12345`.
+Demo accounts (local seed): mentor `admin@mentorloop.dev` / `admin12345`, client `demo@mentorloop.dev` / `demo12345`. `npm run db:reset-demo` wipes the client demo account's jobs, AI results, goals and bookings and reloads the demo data (a Bangladeshi job search: Pathao, bKash, Brain Station 23 and more).
 
 `npm test` (API tests, needs a `mentorloop_test` DB) · `npm run lint` · `npm run typecheck` · `npm run build`
 

@@ -211,6 +211,8 @@ export interface AiRunSummary {
 
 export interface AiRun<R = unknown> extends AiRunSummary {
   result: R | null;
+  /** Interview questions ticked as practised, as "<roundIndex>-<questionIndex>". */
+  practiced: string[];
 }
 
 export interface InterviewQuestion {

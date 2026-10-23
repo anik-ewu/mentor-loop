@@ -7,6 +7,7 @@ import { aiDisabled } from './ai.runner';
 import {
   coverLetterRequestSchema,
   interviewRequestSchema,
+  practicedSchema,
   reviewRequestSchema,
   runListQuerySchema,
 } from './ai.schema';
@@ -89,6 +90,11 @@ aiRouter.get('/runs', async (req, res) => {
 
 aiRouter.get('/runs/:id', async (req, res) => {
   res.json({ run: await ai.getRun(currentUserId(req), req.params.id as string) });
+});
+
+aiRouter.patch('/runs/:id/practiced', validateBody(practicedSchema), async (req, res) => {
+  const { key, done } = req.body;
+  res.json({ run: await ai.setPracticed(currentUserId(req), req.params.id as string, key, done) });
 });
 
 aiRouter.delete('/runs/:id', async (req, res) => {

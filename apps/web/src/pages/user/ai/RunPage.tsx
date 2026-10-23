@@ -61,7 +61,14 @@ export function RunPage() {
         id={runId}
         onReplace={(id) => navigate(`/app/ai/${id}`)}
         onRetry={
-          <ButtonLink to={run?.jobId ? `/app/jobs?job=${run.jobId}` : '/app/ai'} variant="primary">
+          <ButtonLink
+            to={
+              run?.jobId
+                ? `/app/jobs/${run.jobId}?tab=${run.kind === 'interview_questions' ? 'prep' : 'letter'}`
+                : '/app/ai'
+            }
+            variant="primary"
+          >
             Try again
           </ButtonLink>
         }

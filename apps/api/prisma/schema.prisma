@@ -188,6 +188,8 @@ model AiRun {
   score       Int?
   error       String?
   model       String
+  /// Interview questions the user ticked as practised, as "<roundIndex>-<questionIndex>".
+  practiced   String[]  @default([])
   createdAt   DateTime  @default(now())
   completedAt DateTime?
 

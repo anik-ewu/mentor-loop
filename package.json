@@ -14,7 +14,8 @@
     "format:check": "prettier --check .",
     "db:generate": "npm run db:generate -w @mentor-loop/api",
     "db:migrate": "npm run db:migrate -w @mentor-loop/api",
-    "db:seed": "npm run db:seed -w @mentor-loop/api"
+    "db:seed": "npm run db:seed -w @mentor-loop/api",
+    "db:reset-demo": "npm run db:reset-demo -w @mentor-loop/api"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

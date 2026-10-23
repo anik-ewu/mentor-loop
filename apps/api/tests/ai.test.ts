@@ -360,3 +360,59 @@ describe('interview questions and cover letters', () => {
     expect((await agent.get(`/api/jobs/${jobId}`)).body.job.coverLetter).toBe('My edited letter');
   });
 });
+
+describe('practised interview questions', () => {
+  const result = {
+    rounds: [
+      { category: 'technical', questions: [{ question: 'A' }, { question: 'B' }] },
+      { category: 'behavioral', questions: [{ question: 'C' }] },
+    ],
+    questionsToAsk: [],
+  };
+  const makeRun = (
+    userId: string,
+    kind: 'interview_questions' | 'cover_letter' = 'interview_questions',
+  ) =>
+    prisma.aiRun.create({
+      data: { userId, kind, status: 'done', input: {}, model: 'test', result },
+    });
+
+  it('ticks and unticks questions on your own set, idempotently', async () => {
+    const { agent, user } = await loginAs();
+    const run = await makeRun(user.id);
+    const url = `/api/ai/runs/${run.id}/practiced`;
+
+    await agent.patch(url).send({ key: '0-1', done: true }).expect(200);
+    await agent.patch(url).send({ key: '0-1', done: true }).expect(200);
+    const res = await agent.patch(url).send({ key: '1-0', done: true }).expect(200);
+    expect(res.body.run.practiced.sort()).toEqual(['0-1', '1-0']);
+
+    await agent.patch(url).send({ key: '0-1', done: false }).expect(200);
+    const fetched = await agent.get(`/api/ai/runs/${run.id}`).expect(200);
+    expect(fetched.body.run.practiced).toEqual(['1-0']);
+  });
+
+  it('rejects unknown questions, other kinds and other users', async () => {
+    const { agent, user } = await loginAs('user', 'owner@test.dev');
+    const other = await loginAs('user', 'other@test.dev');
+    const run = await makeRun(user.id);
+    const letter = await makeRun(user.id, 'cover_letter');
+
+    await agent
+      .patch(`/api/ai/runs/${run.id}/practiced`)
+      .send({ key: '1-5', done: true })
+      .expect(400);
+    await agent
+      .patch(`/api/ai/runs/${run.id}/practiced`)
+      .send({ key: 'x', done: true })
+      .expect(400);
+    await agent
+      .patch(`/api/ai/runs/${letter.id}/practiced`)
+      .send({ key: '0-0', done: true })
+      .expect(400);
+    await other.agent
+      .patch(`/api/ai/runs/${run.id}/practiced`)
+      .send({ key: '0-0', done: true })
+      .expect(404);
+  });
+});

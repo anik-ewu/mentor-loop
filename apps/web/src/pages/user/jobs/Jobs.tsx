@@ -1,5 +1,5 @@
 import { useDeferredValue, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { jobsApi } from '../../../api/jobs';
 import type { JobSort, JobStatus } from '../../../api/types';
@@ -8,7 +8,6 @@ import { PlusIcon } from '../../../components/icons';
 import { CountUp, EmptyState, Skeleton } from '../../../components/ui';
 import { AddJobModal } from './AddJobModal';
 import { Board } from './Board';
-import { JobDrawer } from './JobDrawer';
 import { JobTable } from './JobTable';
 import { STATUSES, STATUS_LABEL } from './jobMeta';
 import s from './jobs.module.css';
@@ -37,29 +36,21 @@ function initialView(): View {
 }
 
 export function Jobs() {
-  const [params, setParams] = useSearchParams();
+  const [params] = useSearchParams();
+  const navigate = useNavigate();
   const [view, setView] = useState<View>(initialView);
   const [adding, setAdding] = useState(false);
   const [q, setQ] = useState('');
   const [status, setStatus] = useState<JobStatus | ''>('');
   const [sort, setSort] = useState<JobSort>('updated');
   const search = useDeferredValue(q.trim());
-  const openId = params.get('job');
 
   // The board always shows every stage; filter and sort only apply to the table.
   const query = view === 'board' ? { q: search } : { q: search, status: status || undefined, sort };
   const jobs = useQuery({ queryKey: ['jobs', 'list', query], queryFn: () => jobsApi.list(query) });
   const stats = useQuery({ queryKey: ['jobs', 'stats'], queryFn: jobsApi.stats });
 
-  const open = (id: string | null) =>
-    setParams(
-      (p) => {
-        if (id) p.set('job', id);
-        else p.delete('job');
-        return p;
-      },
-      { replace: !id },
-    );
+  const open = (id: string) => navigate(`/app/jobs/${id}`);
 
   const switchView = (v: View) => {
     setView(v);
@@ -69,6 +60,10 @@ export function Jobs() {
       /* storage unavailable */
     }
   };
+
+  // Old links opened a drawer with ?job=<id>; jobs now have their own page.
+  const legacyJob = params.get('job');
+  if (legacyJob) return <Navigate to={`/app/jobs/${legacyJob}`} replace />;
 
   const st = stats.data;
   const isEmpty = st?.total === 0;
@@ -217,7 +212,6 @@ export function Jobs() {
           }}
         />
       )}
-      {openId && <JobDrawer jobId={openId} onClose={() => open(null)} />}
     </div>
   );
 }

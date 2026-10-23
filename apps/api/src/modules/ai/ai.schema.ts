@@ -111,6 +111,12 @@ export const interviewOutputSchema = z.object({
 
 export type InterviewRequest = z.infer<typeof interviewRequestSchema>;
 
+/** Ticks one question as practised ("<roundIndex>-<questionIndex>") or clears it. */
+export const practicedSchema = z.object({
+  key: z.string().regex(/^\d{1,2}-\d{1,2}$/, 'Unknown question'),
+  done: z.boolean(),
+});
+
 // ---------- Cover letter ----------
 
 export const coverLetterRequestSchema = z.object({

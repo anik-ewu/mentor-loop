@@ -277,3 +277,24 @@ export async function deleteRun(userId: string, id: string) {
   const { count } = await prisma.aiRun.deleteMany({ where: { id, userId } });
   if (!count) throw notFound('AI result');
 }
+
+/** Marks an interview question as practised (or not) on the user's own question set. */
+export async function setPracticed(userId: string, id: string, key: string, done: boolean) {
+  const run = await prisma.aiRun.findFirst({ where: { id, userId } });
+  if (!run) throw notFound('AI result');
+  if (run.kind !== 'interview_questions' || run.status !== 'done') {
+    throw badRequest('Only finished interview question sets can be practised');
+  }
+  const [round, question] = key.split('-').map(Number) as [number, number];
+  const rounds = (run.result as { rounds?: { questions: unknown[] }[] } | null)?.rounds ?? [];
+  if (!rounds[round]?.questions[question]) throw badRequest('Unknown question');
+
+  const practiced = new Set(run.practiced);
+  if (done) practiced.add(key);
+  else practiced.delete(key);
+  return prisma.aiRun.update({
+    where: { id },
+    data: { practiced: [...practiced] },
+    select: { id: true, practiced: true },
+  });
+}

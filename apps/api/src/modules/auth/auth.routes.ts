@@ -7,7 +7,15 @@ import { notFound } from '../../lib/errors';
 import { signToken } from '../../lib/jwt';
 import { AUTH_COOKIE, currentUserId, optionalAuth, requireAuth } from '../../middleware/auth';
 import { validateBody } from '../../middleware/validate';
-import { demoSchema, googleSchema, loginSchema, signupSchema, updateMeSchema } from './auth.schema';
+import {
+  demoSchema,
+  forgotPasswordSchema,
+  googleSchema,
+  loginSchema,
+  resetPasswordSchema,
+  signupSchema,
+  updateMeSchema,
+} from './auth.schema';
 import * as authService from './auth.service';
 
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
@@ -54,6 +62,28 @@ authRouter.post('/google', authLimiter, validateBody(googleSchema), async (req, 
   if (!env.GOOGLE_CLIENT_ID) throw notFound('Google sign-in');
   startSession(req, res, await authService.loginWithGoogle(req.body.credential));
 });
+
+authRouter.post(
+  '/forgot-password',
+  authLimiter,
+  validateBody(forgotPasswordSchema),
+  async (req, res) => {
+    // Not awaited: an unknown email returning faster than a real one would reveal which exists.
+    authService.requestPasswordReset(req.body.email).catch((err) => {
+      console.error('Password reset email failed:', err);
+    });
+    res.status(204).end();
+  },
+);
+
+authRouter.post(
+  '/reset-password',
+  authLimiter,
+  validateBody(resetPasswordSchema),
+  async (req, res) => {
+    startSession(req, res, await authService.resetPassword(req.body));
+  },
+);
 
 authRouter.post('/demo', validateBody(demoSchema), async (req, res) => {
   if (!env.DEMO_MODE) throw notFound('Demo mode');

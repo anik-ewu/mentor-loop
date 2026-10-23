@@ -1,9 +1,12 @@
+import { createHash, randomBytes } from 'node:crypto';
 import bcrypt from 'bcryptjs';
 import type { User } from '@prisma/client';
 import { prisma } from '../../lib/prisma';
-import { conflict, unauthorized } from '../../lib/errors';
+import { env } from '../../config/env';
+import { badRequest, conflict, unauthorized } from '../../lib/errors';
+import { mailer } from '../../lib/mailer';
 import { googleVerifier } from './google';
-import type { LoginInput, SignupInput } from './auth.schema';
+import type { LoginInput, ResetPasswordInput, SignupInput } from './auth.schema';
 
 export const DEMO_EMAILS = { user: 'demo@mentorloop.dev', admin: 'admin@mentorloop.dev' } as const;
 
@@ -55,6 +58,57 @@ export async function loginWithGoogle(credential: string) {
       name: profile.name,
       googleId: profile.googleId,
       avatarUrl: profile.avatarUrl,
+    },
+  });
+}
+
+const RESET_TTL_MS = 60 * 60 * 1000;
+const hashToken = (token: string) => createHash('sha256').update(token).digest('hex');
+
+/**
+ * Emails a one-hour reset link. Also how accounts created with Google get a password.
+ * Callers always answer 204, so the response never says whether the email is registered.
+ */
+export async function requestPasswordReset(email: string) {
+  const user = await prisma.user.findUnique({ where: { email } });
+  if (!user || (Object.values(DEMO_EMAILS) as string[]).includes(email)) return;
+
+  const token = randomBytes(32).toString('base64url');
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      resetTokenHash: hashToken(token),
+      resetTokenExpires: new Date(Date.now() + RESET_TTL_MS),
+    },
+  });
+
+  const link = `${env.CLIENT_ORIGIN}/reset-password?token=${token}`;
+  await mailer.send({
+    to: user.email,
+    subject: 'Reset your MentorLoop password',
+    text: [
+      `Hi ${user.name.split(' ')[0]},`,
+      '',
+      'Use this link to set a new MentorLoop password. It works once and expires in 1 hour:',
+      link,
+      '',
+      "If you didn't ask for this, you can ignore this email.",
+    ].join('\n'),
+  });
+}
+
+/** Sets the new password and uses up the token. Returns the user so the route can log them in. */
+export async function resetPassword({ token, password }: ResetPasswordInput) {
+  const user = await prisma.user.findUnique({ where: { resetTokenHash: hashToken(token) } });
+  if (!user?.resetTokenExpires || user.resetTokenExpires < new Date()) {
+    throw badRequest('This reset link is invalid or has expired. Request a new one.');
+  }
+  return prisma.user.update({
+    where: { id: user.id },
+    data: {
+      passwordHash: await bcrypt.hash(password, 12),
+      resetTokenHash: null,
+      resetTokenExpires: null,
     },
   });
 }

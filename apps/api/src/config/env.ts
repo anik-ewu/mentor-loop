@@ -15,6 +15,9 @@ const envSchema = z.object({
   ANTHROPIC_API_KEY: z.string().default(''),
   ANTHROPIC_MODEL: z.string().default('claude-haiku-5-5'),
   AI_DAILY_LIMIT: z.coerce.number().int().min(0).default(10),
+  // Optional: Resend API key for password reset emails. Empty logs the reset link instead.
+  RESEND_API_KEY: z.string().default(''),
+  EMAIL_FROM: z.string().default('MentorLoop <onboarding@resend.dev>'),
   DEMO_MODE: z
     .enum(['true', 'false'])
     .default('false')

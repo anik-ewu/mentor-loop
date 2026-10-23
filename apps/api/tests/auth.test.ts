@@ -1,5 +1,6 @@
 import request from 'supertest';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { mailer } from '../src/lib/mailer';
 import { googleVerifier } from '../src/modules/auth/google';
 import { prisma } from '../src/lib/prisma';
 import { app, createUser, resetDb } from './helpers';
@@ -92,5 +93,79 @@ describe('auth', () => {
       .post('/api/auth/login')
       .send({ email: 'admin@mentorloop.dev', password: 'admin12345' })
       .expect(401);
+  });
+
+  describe('password reset', () => {
+    /** Requests a reset and returns the token from the emailed link. */
+    async function requestToken(email: string) {
+      const send = vi.spyOn(mailer, 'send').mockResolvedValue();
+      await request(app).post('/api/auth/forgot-password').send({ email }).expect(204);
+      await vi.waitFor(() => expect(send).toHaveBeenCalledOnce());
+      return new URL(send.mock.calls[0][0].text.match(/https?:\/\/\S+/)![0]).searchParams.get(
+        'token',
+      )!;
+    }
+
+    it('lets a Google-only account set a password, then log in with it', async () => {
+      const user = await prisma.user.create({
+        data: { email: 'g@test.dev', name: 'G User', googleId: 'google-1' },
+      });
+      const token = await requestToken('G@test.dev');
+
+      const res = await request(app)
+        .post('/api/auth/reset-password')
+        .send({ token, password: 'new-password-1' })
+        .expect(200);
+      expect(res.body.user.id).toBe(user.id);
+      expect(res.headers['set-cookie'][0]).toMatch(/ml_session=/);
+
+      await request(app)
+        .post('/api/auth/login')
+        .send({ email: 'g@test.dev', password: 'new-password-1' })
+        .expect(200);
+    });
+
+    it('uses each token once and stores only its hash', async () => {
+      await createUser('user', 'r@test.dev');
+      const token = await requestToken('r@test.dev');
+      const stored = await prisma.user.findUniqueOrThrow({ where: { email: 'r@test.dev' } });
+      expect(stored.resetTokenHash).not.toBe(token);
+
+      await request(app)
+        .post('/api/auth/reset-password')
+        .send({ token, password: 'another-pass' })
+        .expect(200);
+      await request(app)
+        .post('/api/auth/reset-password')
+        .send({ token, password: 'third-pass1' })
+        .expect(400);
+      await request(app)
+        .post('/api/auth/login')
+        .send({ email: 'r@test.dev', password: 'password123' })
+        .expect(401);
+    });
+
+    it('rejects an expired token', async () => {
+      await createUser('user', 'old@test.dev');
+      const token = await requestToken('old@test.dev');
+      await prisma.user.update({
+        where: { email: 'old@test.dev' },
+        data: { resetTokenExpires: new Date(Date.now() - 1000) },
+      });
+      await request(app)
+        .post('/api/auth/reset-password')
+        .send({ token, password: 'new-password-1' })
+        .expect(400);
+    });
+
+    it('answers the same for an unknown email and sends nothing', async () => {
+      const send = vi.spyOn(mailer, 'send').mockResolvedValue();
+      await request(app)
+        .post('/api/auth/forgot-password')
+        .send({ email: 'nobody@test.dev' })
+        .expect(204);
+      await new Promise((r) => setTimeout(r, 50));
+      expect(send).not.toHaveBeenCalled();
+    });
   });
 });

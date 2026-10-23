@@ -149,6 +149,11 @@ export function AuthPage({ mode }: { mode: Mode }) {
                 ))}
               </div>
             )}
+            {!isSignup && (
+              <Link to="/forgot-password" className={s.forgot}>
+                Forgot password?
+              </Link>
+            )}
           </div>
           <Button type="submit" variant="primary" size="lg" block loading={submitting}>
             {isSignup ? 'Create account' : 'Log in'}

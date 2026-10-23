@@ -126,7 +126,7 @@ Google Cloud Console → Credentials → **OAuth client ID** (Web). Add the site
 
 ## AI coach (optional)
 
-Create an API key in the [Claude Console](https://platform.claude.com) and set `ANTHROPIC_API_KEY` (in `apps/api/.env` locally, or on Render). Each review, question set or cover letter is one Claude Haiku 5.5 call. `AI_DAILY_LIMIT` caps calls per user per day (the mentor account is exempt). With no key, the AI buttons are hidden and the endpoints return `503`.
+Create an API key in the [Claude Console](https://platform.claude.com) and set `ANTHROPIC_API_KEY` (in `apps/api/.env` locally, or on Render). Each review, question set or cover letter is one Claude Haiku 5.5 call. `AI_DAILY_LIMIT` caps calls per user per day (the mentor account is exempt). With no key, the AI buttons are hidden and the endpoints return `503`. An `ANTHROPIC_API_KEY` exported in your shell (for example from `~/.zshrc`) overrides `apps/api/.env`; if reviews fail with "isn't set up correctly", the API log says which setting Anthropic rejected.
 
 ## Roadmap
 

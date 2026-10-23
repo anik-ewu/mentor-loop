@@ -71,6 +71,22 @@ export async function callStructured<T extends z.ZodType>({
 
 function toAiFailure(err: unknown): Error {
   if (err instanceof AiFailure) return err;
+  // A bad key or model never fixes itself on retry: say it's a setup problem, and tell the
+  // operator exactly what to check (shell exports override apps/api/.env).
+  if (
+    err instanceof Anthropic.AuthenticationError ||
+    err instanceof Anthropic.PermissionDeniedError ||
+    err instanceof Anthropic.NotFoundError
+  ) {
+    console.error(
+      `Claude API rejected the server's configuration (${err.status}): check ANTHROPIC_API_KEY ` +
+        `and ANTHROPIC_MODEL (${env.ANTHROPIC_MODEL}). An exported shell variable overrides apps/api/.env.`,
+      err.message,
+    );
+    return new AiFailure(
+      "The AI coach isn't set up correctly on this server. Please let the site owner know.",
+    );
+  }
   console.error('Claude API call failed:', err);
   if (err instanceof Anthropic.RateLimitError) {
     return new AiFailure('The AI service is busy right now. Please try again in a minute.');

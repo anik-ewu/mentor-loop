@@ -3,6 +3,7 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { Button } from '../components/Button';
 import {
+  BriefcaseIcon,
   CalendarIcon,
   GridIcon,
   HomeIcon,
@@ -24,6 +25,7 @@ interface NavItem {
 
 const USER_NAV: NavItem[] = [
   { to: '/app', label: 'Home', icon: HomeIcon, end: true },
+  { to: '/app/jobs', label: 'Jobs', icon: BriefcaseIcon },
   { to: '/app/book', label: 'Book', icon: PlusIcon },
   { to: '/app/bookings', label: 'My sessions', icon: ListIcon },
 ];

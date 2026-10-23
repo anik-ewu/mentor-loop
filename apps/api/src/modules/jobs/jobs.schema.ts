@@ -91,7 +91,17 @@ export const updateEventSchema = createEventSchema
   .pick({ title: true, scheduledAt: true, outcome: true, notes: true })
   .partial();
 
+export const JOB_SORTS = ['updated', 'created', 'applied', 'company', 'priority'] as const;
+
+export const listQuerySchema = z.object({
+  status: z.enum(JOB_STATUSES).optional().catch(undefined),
+  q: z.string().trim().max(100).optional().catch(undefined),
+  sort: z.enum(JOB_SORTS).default('updated').catch('updated'),
+});
+
 export type CreateJobInput = z.infer<typeof createJobSchema>;
 export type UpdateJobInput = z.infer<typeof updateJobSchema>;
 export type CreateEventInput = z.infer<typeof createEventSchema>;
 export type UpdateEventInput = z.infer<typeof updateEventSchema>;
+export type ListQuery = z.infer<typeof listQuerySchema>;
+export type JobStatus = (typeof JOB_STATUSES)[number];

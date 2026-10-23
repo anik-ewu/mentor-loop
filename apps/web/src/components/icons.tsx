@@ -33,3 +33,6 @@ export const ArrowRightIcon = base('M5 12h14M13 6l6 6-6 6');
 export const CheckIcon = base('m5 12.5 4.5 4.5L19 7');
 export const ClockIcon = base('M12 7v5l3 2M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z');
 export const TrashIcon = base('M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3');
+export const BriefcaseIcon = base(
+  'M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M4 7h16a1 1 0 0 1 1 1v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a1 1 0 0 1 1-1zM3 12h18',
+);

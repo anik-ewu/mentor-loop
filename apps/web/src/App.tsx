@@ -11,6 +11,7 @@ import { Landing } from './pages/Landing';
 import { Privacy, Terms } from './pages/Legal';
 import { NotFound } from './pages/NotFound';
 import { Book } from './pages/user/Book';
+import { Jobs } from './pages/user/jobs/Jobs';
 import { MyBookings } from './pages/user/MyBookings';
 import { UserHome } from './pages/user/UserHome';
 
@@ -35,6 +36,7 @@ export function App() {
         }
       >
         <Route index element={<UserHome />} />
+        <Route path="jobs" element={<Jobs />} />
         <Route path="book" element={<Book />} />
         <Route path="bookings" element={<MyBookings />} />
       </Route>

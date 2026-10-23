@@ -146,7 +146,7 @@ async function seedJobs(userId: string) {
       location: 'Berlin',
       workMode: 'hybrid',
       source: 'LinkedIn',
-      priority: 1,
+      priority: 3,
       jobDescription:
         'We are looking for a frontend engineer with strong React and TypeScript skills to build our analytics dashboard. Experience with design systems, accessibility and testing (Vitest, Playwright) is a plus.',
     },
@@ -168,7 +168,7 @@ async function seedJobs(userId: string) {
       location: 'London',
       workMode: 'hybrid',
       source: 'Referral',
-      priority: 1,
+      priority: 3,
       followUpAt: daysAgo(-5),
     },
     {
@@ -189,7 +189,7 @@ async function seedJobs(userId: string) {
       location: 'Amsterdam',
       workMode: 'onsite',
       source: 'LinkedIn',
-      priority: 1,
+      priority: 3,
     },
     {
       company: 'Lumen Retail',
@@ -209,15 +209,26 @@ async function seedJobs(userId: string) {
       location: 'Remote',
       workMode: 'remote',
       source: 'Indeed',
-      priority: 3,
+      priority: 1,
     },
   ];
 
   for (const [i, j] of jobs.entries()) {
     const { appliedDaysAgo, ...data } = j;
     const appliedAt = appliedDaysAgo == null ? null : daysAgo(appliedDaysAgo);
+    // Applied jobs get a follow-up 7 days after applying, as the API does.
+    const followUpAt =
+      data.followUpAt ??
+      (j.status === 'applied' && appliedAt ? daysAgo(appliedDaysAgo! - 7) : null);
     const job = await prisma.jobApplication.create({
-      data: { ...data, userId, appliedAt, position: i, createdAt: appliedAt ?? daysAgo(1) },
+      data: {
+        ...data,
+        userId,
+        appliedAt,
+        followUpAt,
+        position: i,
+        createdAt: appliedAt ?? daysAgo(1),
+      },
     });
     if (!appliedAt) continue;
 

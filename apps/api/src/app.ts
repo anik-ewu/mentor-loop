@@ -6,6 +6,7 @@ import { env } from './config/env';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 import { authRouter } from './modules/auth/auth.routes';
 import { bookingsRouter } from './modules/bookings/bookings.routes';
+import { jobsRouter } from './modules/jobs/jobs.routes';
 import { servicesRouter } from './modules/services/services.routes';
 import { slotsRouter } from './modules/slots/slots.routes';
 
@@ -27,6 +28,7 @@ export function createApp() {
   app.use('/api/services', servicesRouter);
   app.use('/api/slots', slotsRouter);
   app.use('/api/bookings', bookingsRouter);
+  app.use('/api/jobs', jobsRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

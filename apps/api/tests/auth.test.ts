@@ -1,5 +1,6 @@
 import request from 'supertest';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { signToken } from '../src/lib/jwt';
 import { mailer } from '../src/lib/mailer';
 import { googleVerifier } from '../src/modules/auth/google';
 import { prisma } from '../src/lib/prisma';
@@ -163,6 +164,22 @@ describe('auth', () => {
       await owner.get('/api/jobs').expect(200);
       const ownerMe = await owner.get('/api/auth/me').expect(200);
       expect(ownerMe.body.user.id).toBe(user.id);
+    });
+
+    it('keeps sessions from before session versions existed', async () => {
+      const user = await createUser('user', 'legacy@test.dev');
+      const cookie = `ml_session=${signToken({ sub: user.id, role: user.role })}`;
+      await request(app).get('/api/jobs').set('Cookie', cookie).expect(200);
+    });
+
+    it('rejects a revoked session on admin routes too', async () => {
+      const { agent, user } = await loginAs('admin');
+      await agent.get('/api/slots/all').expect(200);
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { sessionVersion: { increment: 1 } },
+      });
+      await agent.get('/api/slots/all').expect(401);
     });
 
     it('rejects an expired token', async () => {

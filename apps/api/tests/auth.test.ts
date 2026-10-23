@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mailer } from '../src/lib/mailer';
 import { googleVerifier } from '../src/modules/auth/google';
 import { prisma } from '../src/lib/prisma';
-import { app, createUser, resetDb } from './helpers';
+import { app, createUser, loginAs, resetDb } from './helpers';
 
 beforeEach(resetDb);
 afterEach(() => vi.restoreAllMocks());
@@ -143,6 +143,26 @@ describe('auth', () => {
         .post('/api/auth/login')
         .send({ email: 'r@test.dev', password: 'password123' })
         .expect(401);
+    });
+
+    it('logs out existing sessions but keeps the one it starts', async () => {
+      const { agent: stolen, user } = await loginAs('user', 'hijacked@test.dev');
+      await stolen.get('/api/jobs').expect(200);
+      const token = await requestToken('hijacked@test.dev');
+
+      const owner = request.agent(app);
+      await owner
+        .post('/api/auth/reset-password')
+        .send({ token, password: 'new-password-1' })
+        .expect(200);
+
+      await stolen.get('/api/jobs').expect(401);
+      const me = await stolen.get('/api/auth/me').expect(200);
+      expect(me.body.user).toBeNull();
+
+      await owner.get('/api/jobs').expect(200);
+      const ownerMe = await owner.get('/api/auth/me').expect(200);
+      expect(ownerMe.body.user.id).toBe(user.id);
     });
 
     it('rejects an expired token', async () => {

@@ -5,6 +5,8 @@ import { env } from '../config/env';
 export interface AuthPayload {
   sub: string;
   role: Role;
+  /** User.sessionVersion when the token was issued. Missing in tokens from before it existed. */
+  ver?: number;
 }
 
 export const signToken = (payload: AuthPayload) =>

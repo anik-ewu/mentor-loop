@@ -60,6 +60,31 @@ export function CopyButton({ text }: { text: string }) {
   );
 }
 
+/** Interview prep and a cover letter, prefilled with this review and its job. */
+function NextSteps({ run }: { run: AiRun<Review> }) {
+  const link = (tab: string) => {
+    const params = new URLSearchParams({ tab, review: run.id });
+    if (run.jobId) params.set('job', run.jobId);
+    return `/app/ai?${params}`;
+  };
+  return (
+    <section className={`${s.panel} ${s.section}`}>
+      <h3>Next steps</h3>
+      <p className="muted" style={{ marginBottom: 12 }}>
+        Use this review to prepare for {run.job ? `${run.job.company}` : 'a saved job'}: practise
+        likely questions, including ones about your own projects, or draft a cover letter built only
+        from your resume.
+      </p>
+      <div className="row">
+        <ButtonLink to={link('interview_questions')} variant="primary">
+          Generate interview questions
+        </ButtonLink>
+        <ButtonLink to={link('cover_letter')}>Draft cover letter</ButtonLink>
+      </div>
+    </section>
+  );
+}
+
 /** Link to book a human Resume Deep-Dive with this review attached. */
 function BookCta({ reviewId }: { reviewId: string }) {
   const services = useQuery({ queryKey: ['services', 'active'], queryFn: servicesApi.listActive });
@@ -220,6 +245,7 @@ export function ReviewResult({ run }: { run: AiRun<Review> }) {
         </section>
       )}
 
+      <NextSteps run={run} />
       <BookCta reviewId={run.id} />
     </div>
   );

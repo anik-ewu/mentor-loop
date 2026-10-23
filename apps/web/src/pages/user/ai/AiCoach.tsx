@@ -1,38 +1,46 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { aiApi } from '../../../api/ai';
 import type { AiKind } from '../../../api/types';
 import { useAuth } from '../../../auth/AuthContext';
 import { ButtonLink } from '../../../components/Button';
 import { EmptyState, Skeleton } from '../../../components/ui';
+import { GenerateForm } from './GenerateForm';
 import { ReviewForm } from './ReviewForm';
 import { RunHistory } from './RunHistory';
 import s from './ai.module.css';
 import d from '../../dashboard.module.css';
 
-const TABS: { kind: AiKind; label: string; empty: string }[] = [
+const TABS: { kind: AiKind; label: string; title: string; empty: string }[] = [
   {
     kind: 'resume_review',
     label: 'Reviews',
+    title: 'New resume review',
     empty: 'Your resume reviews and job matches show up here.',
   },
   {
     kind: 'interview_questions',
     label: 'Interview prep',
-    empty: 'Generate questions from a saved job: open it in Jobs, then the AI tab.',
+    title: 'New interview prep',
+    empty: 'Pick a saved job on the left to generate likely interview questions.',
   },
   {
     kind: 'cover_letter',
     label: 'Cover letters',
-    empty: 'Draft a cover letter from a saved job and a resume review.',
+    title: 'New cover letter',
+    empty: 'Pick a saved job and a resume review on the left to draft a cover letter.',
   },
 ];
 
 export function AiCoach() {
   const { config } = useAuth();
   const navigate = useNavigate();
-  const [kind, setKind] = useState<AiKind>('resume_review');
+  // The tab lives in the URL so review results can link straight to a prefilled form.
+  const [params, setParams] = useSearchParams();
+  const kind = TABS.find((t) => t.kind === params.get('tab'))?.kind ?? 'resume_review';
+  const setKind = (k: AiKind) =>
+    setParams(k === 'resume_review' ? {} : { tab: k }, { replace: true });
+  const openRun = (run: { id: string }) => navigate(`/app/ai/${run.id}`);
   const runs = useQuery({
     queryKey: ['ai', 'runs', kind],
     queryFn: () => aiApi.runs({ kind }),
@@ -63,8 +71,18 @@ export function AiCoach() {
       ) : (
         <div className={s.layout}>
           <section className={s.panel}>
-            <h2>New resume review</h2>
-            <ReviewForm onStarted={(run) => navigate(`/app/ai/${run.id}`)} />
+            <h2>{tab.title}</h2>
+            {kind === 'resume_review' ? (
+              <ReviewForm onStarted={openRun} />
+            ) : (
+              <GenerateForm
+                key={kind}
+                tool={kind === 'interview_questions' ? 'questions' : 'letter'}
+                initialJobId={params.get('job') ?? undefined}
+                initialReviewId={params.get('review') ?? undefined}
+                onStarted={openRun}
+              />
+            )}
           </section>
 
           <section>

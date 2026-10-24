@@ -76,6 +76,6 @@ When a session turns up something non-obvious about this repo, add it below in a
 
 - An `ANTHROPIC_API_KEY` exported in the shell overrides `apps/api/.env`. When AI calls fail with "isn't set up correctly", check the shell env first.
 - API tests share one database and run serially (`fileParallelism: false`). Every test file that touches the database calls `resetDb()`.
-- The Render free tier sleeps after 15 minutes idle, so the first request in production can take 30–60 s. That's not a bug.
+- The Render free tier sleeps after 15 minutes idle, so the first request in production can take 30–60 s. That's not a bug. A cron-job.org ping to `/api/health` every 10 minutes keeps it awake, so keep that route free of database calls: a DB check there would also keep Neon's compute running and use up its free hours.
 - After merging a branch that adds a Prisma migration, run `npm run db:migrate` locally. Tests apply migrations to `mentorloop_test` on their own, but the dev database doesn't, and the API then answers 500 ("column does not exist"). Production runs `prisma migrate deploy` on container start.
 - Password reset emails go through Resend. Without `RESEND_API_KEY`, dev prints the link to the API log, while production hides "Forgot password?" (`passwordResetEnabled` in `/auth/config`) and never logs the link.

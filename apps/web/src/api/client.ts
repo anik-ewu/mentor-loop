@@ -33,6 +33,14 @@ export async function api<T>(path: string, method: Method = 'GET', body?: unknow
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     const err = data?.error ?? {};
+    // A gateway error with no API error body comes from the proxy while the free-tier API wakes up.
+    if (!data?.error && [502, 503, 504].includes(res.status)) {
+      throw new ApiError(
+        res.status,
+        'UNAVAILABLE',
+        'The server is waking up. Try again in a few seconds.',
+      );
+    }
     throw new ApiError(
       res.status,
       err.code ?? 'UNKNOWN',

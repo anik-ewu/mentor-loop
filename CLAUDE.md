@@ -8,6 +8,11 @@ A job-search toolkit with human mentoring built in: job tracker, AI coach (Claud
 - **Review before pushing to `dev`.** Before every `git push` to `dev`, run the `code-reviewer` agent on the unpushed changes (`git diff origin/dev...HEAD`, plus any uncommitted work). Fix real problems, tell the user what the review found, then push.
 - **Run the checks before pushing:** `npm run format:check && npm run lint && npm run typecheck`. Also run `npm test` when the API changed (it needs the `mentorloop_test` database).
 - **Ask before merging to `main`.** When a piece of work is finished and pushed to `dev`, ask the user whether to merge `dev` into `main`. Do it only after a clear yes, by opening a PR `dev` → `main`, never with a direct push. Pushing to `main` redeploys production (Render and Vercel).
+- **PR titles for `dev` → `main`** start with the type of the main change, then that change as a short title:
+  - `feat: Add forgot password for email and Google accounts` for a new feature or capability.
+  - `fix: Log out other sessions after a password reset` for a bug or security fix.
+  - When a PR holds several changes, title it after the biggest one and list the rest in the description.
+  - Merge with a merge commit, not a squash, so `dev` and `main` stay in step. Then fast-forward `dev` to `main`.
 - Commit messages: a short imperative subject that says what changed for the user, like the existing history ("Add weekly goals and streaks, …", "Don't count failed AI runs toward the daily limit").
 
 ## Commands
@@ -71,6 +76,9 @@ When a session turns up something non-obvious about this repo, add it below in a
 
 - An `ANTHROPIC_API_KEY` exported in the shell overrides `apps/api/.env`. When AI calls fail with "isn't set up correctly", check the shell env first.
 - API tests share one database and run serially (`fileParallelism: false`). Every test file that touches the database calls `resetDb()`.
-- The Render free tier sleeps after 15 minutes idle, so the first request in production can take 30–60 s. That's not a bug.
+- The Render free tier sleeps after 15 minutes idle, so the first request in production can take 30–60 s. That's not a bug. A cron-job.org ping to `/api/health` every 10 minutes keeps it awake, so keep that route free of database calls: a DB check there would also keep Neon's compute running and use up its free hours.
 - After merging a branch that adds a Prisma migration, run `npm run db:migrate` locally. Tests apply migrations to `mentorloop_test` on their own, but the dev database doesn't, and the API then answers 500 ("column does not exist"). Production runs `prisma migrate deploy` on container start.
 - Password reset emails go through Resend. Without `RESEND_API_KEY`, dev prints the link to the API log, while production hides "Forgot password?" (`passwordResetEnabled` in `/auth/config`) and never logs the link.
+- In production `req.ip` is a shared proxy address, not the visitor, even with `trust proxy`: one client lands in several limiter buckets, and direct and Vercel requests share them. Rate limits use `clientKey` in `middleware/rateLimit.ts` instead, which reads Vercel's client IP header. Raising the `trust proxy` count isn't a safe fix, because Render appends to whatever `X-Forwarded-For` a client sends. A request straight to Render can fake the header too, so `/login`, `/signup` and `/forgot-password` also have limits on email or on everyone.
+- `clientKey` silently falls back to the shared `req.ip` when Vercel's header is missing, so check after deploying: POST a junk credential to `/api/auth/google` and confirm `X-RateLimit-Remaining` falls steadily. Limiter counts live in memory: a restart clears them, and a second API instance would multiply every limit.
+- Vercel answers 502 for `/api/*` while the Render API is cold-starting, and the web client then shows "The server is waking up". If production keeps doing this, check that the cron-job.org ping to `/api/health` is still running.

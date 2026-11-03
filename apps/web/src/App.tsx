@@ -11,7 +11,8 @@ import { AuthPage } from './pages/AuthPage';
 import { Landing } from './pages/Landing';
 import { Privacy, Terms } from './pages/Legal';
 import { NotFound } from './pages/NotFound';
-import { ForgotPassword, ResetPassword } from './pages/PasswordReset';
+import { ForgotPassword, ResetPassword, VerifyEmail } from './pages/PasswordReset';
+import { Settings } from './pages/Settings';
 import { AiCoach } from './pages/user/ai/AiCoach';
 import { RunPage } from './pages/user/ai/RunPage';
 import { JobPage } from './pages/user/jobs/JobPage';
@@ -28,6 +29,7 @@ export function App() {
         <Route path="signup" element={<AuthPage mode="signup" />} />
         <Route path="forgot-password" element={<ForgotPassword />} />
         <Route path="reset-password" element={<ResetPassword />} />
+        <Route path="verify-email" element={<VerifyEmail />} />
         <Route path="privacy" element={<Privacy />} />
         <Route path="terms" element={<Terms />} />
         <Route path="*" element={<NotFound />} />
@@ -49,6 +51,7 @@ export function App() {
         <Route path="sessions" element={<Sessions />} />
         <Route path="book" element={<SessionsRedirect tab="book" />} />
         <Route path="bookings" element={<SessionsRedirect />} />
+        <Route path="settings" element={<Settings />} />
       </Route>
 
       <Route
@@ -64,6 +67,7 @@ export function App() {
         <Route path="slots" element={<Availability />} />
         <Route path="services" element={<Services />} />
         <Route path="usage" element={<Usage />} />
+        <Route path="settings" element={<Settings />} />
       </Route>
     </Routes>
   );

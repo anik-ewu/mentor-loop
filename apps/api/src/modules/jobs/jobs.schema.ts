@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { webUrl } from '../../lib/schema';
 
 export const JOB_STATUSES = [
   'wishlist',
@@ -30,9 +31,7 @@ const money = z.preprocess(
 const jobFields = {
   company: z.string().trim().min(1, 'Company is required').max(120),
   title: z.string().trim().min(1, 'Job title is required').max(160),
-  jobUrl: z
-    .preprocess((v) => (v === '' ? null : v), z.url('Enter a valid link').max(1000).nullish())
-    .optional(),
+  jobUrl: z.preprocess((v) => (v === '' ? null : v), webUrl(1000).nullish()).optional(),
   location: text(120),
   workMode: z.preprocess(
     (v) => (v === '' ? null : v),

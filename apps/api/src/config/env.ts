@@ -18,9 +18,11 @@ const envSchema = z.object({
   // USD per million tokens, used to price each run (defaults: Claude Haiku 5.5).
   AI_PRICE_INPUT_PER_MTOK: z.coerce.number().min(0).default(0.1),
   AI_PRICE_OUTPUT_PER_MTOK: z.coerce.number().min(0).default(0.5),
-  // Spend cap per calendar month (UTC) across all users; 0 = no cap.
-  AI_MONTHLY_BUDGET_USD: z.coerce.number().min(0).default(0),
-  // Optional: Resend API key for password reset emails. Empty logs the reset link instead.
+  // Spend cap per calendar month (UTC) across all users. There is no "unlimited": 0 pauses AI.
+  AI_MONTHLY_BUDGET_USD: z.coerce.number().min(0).default(1),
+  // Email for confirmation and password reset. Brevo is used if both are set. With neither, dev
+  // logs the links, and production turns password reset and email signup off.
+  BREVO_API_KEY: z.string().default(''),
   RESEND_API_KEY: z.string().default(''),
   EMAIL_FROM: z.string().default('MentorLoop <onboarding@resend.dev>'),
   DEMO_MODE: z

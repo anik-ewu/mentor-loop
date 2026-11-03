@@ -1,8 +1,8 @@
-import bcrypt from 'bcryptjs';
-import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcrypt';
+import { createScriptClient } from './client';
 import { DEMO_EMAIL, seedDemoBookings, seedDemoGoals, seedDemoJobs } from './demo';
 
-const prisma = new PrismaClient();
+const prisma = createScriptClient();
 
 const DAYS_AHEAD = 14;
 const SLOT_HOURS = [10, 14, 18]; // local server time
@@ -13,13 +13,24 @@ async function upsertUser(email: string, name: string, role: 'user' | 'admin', p
   return prisma.user.upsert({
     where: { email },
     update: {},
-    create: { email, name, role, passwordHash },
+    create: { email, name, role, passwordHash, emailVerifiedAt: new Date() },
   });
 }
 
 async function main() {
+  // admin@mentorloop.dev is the read-only demo mentor, so the real mentor needs another address.
+  // Production has to choose its own: the defaults below are public in this repository.
+  if (
+    process.env.NODE_ENV === 'production' &&
+    !(process.env.ADMIN_EMAIL && process.env.ADMIN_PASSWORD)
+  ) {
+    throw new Error('Set ADMIN_EMAIL and ADMIN_PASSWORD before seeding production');
+  }
+  if (process.env.ADMIN_EMAIL === 'admin@mentorloop.dev') {
+    throw new Error('ADMIN_EMAIL is the read-only demo mentor: use your own address');
+  }
   const admin = await upsertUser(
-    process.env.ADMIN_EMAIL ?? 'admin@mentorloop.dev',
+    process.env.ADMIN_EMAIL ?? 'mentor@mentorloop.dev',
     process.env.ADMIN_NAME ?? 'Alex Morgan',
     'admin',
     process.env.ADMIN_PASSWORD ?? 'admin12345',

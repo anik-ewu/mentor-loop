@@ -1,5 +1,5 @@
 import { useEffect, type ComponentType, type SVGProps } from 'react';
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { Button } from '../components/Button';
 import {
@@ -10,6 +10,7 @@ import {
   LayersIcon,
   ListIcon,
   LogoutIcon,
+  SettingsIcon,
   SparkIcon,
 } from '../components/icons';
 import { Avatar, Logo, ThemeToggle } from '../components/ui';
@@ -49,6 +50,7 @@ export function AppLayout() {
   const toast = useToast();
   const nav = user?.role === 'admin' ? ADMIN_NAV : USER_NAV;
   const home = nav[0]!.to;
+  const settings = user?.role === 'admin' ? '/admin/settings' : '/app/settings';
 
   // Lets toasts sit above the mobile tab bar.
   useEffect(() => {
@@ -87,6 +89,9 @@ export function AppLayout() {
               </div>
             </div>
           )}
+          <NavLink to={settings} className={linkClass(s.sideLink)}>
+            <SettingsIcon /> Settings
+          </NavLink>
           <Button variant="ghost" onClick={onLogout} block>
             <LogoutIcon /> Log out
           </Button>
@@ -98,12 +103,20 @@ export function AppLayout() {
           <Logo to={home} />
           <div className="row" style={{ gap: 8 }}>
             <ThemeToggle />
+            <Link className={s.iconBtn} to={settings} aria-label="Settings">
+              <SettingsIcon />
+            </Link>
             <button className={s.iconBtn} onClick={onLogout} aria-label="Log out">
               <LogoutIcon />
             </button>
           </div>
         </header>
         <main className={s.content}>
+          {user?.isDemo && user.role === 'admin' && (
+            <p className={s.demoNote} role="note">
+              You're viewing the demo mentor: sample data only, and changes are turned off.
+            </p>
+          )}
           <Outlet />
         </main>
       </div>

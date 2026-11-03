@@ -1,5 +1,6 @@
 import { Prisma } from '@prisma/client';
 import { env } from '../../config/env';
+import { demoOwnerFilter } from '../../lib/demo';
 import { prisma } from '../../lib/prisma';
 import { monthSpendMicros } from '../ai/ai.runner';
 
@@ -18,13 +19,19 @@ async function usersById(ids: string[]) {
 }
 
 /** Where AI tokens and money went over the last `days` days, plus this month's budget. */
-export async function overview(days: number) {
+export async function overview(days: number, onlySampleData = false) {
   const since = new Date(Date.now() - days * DAY_MS);
-  const inPeriod = { createdAt: { gte: since } };
+  const sampleUsers = onlySampleData
+    ? (await prisma.user.findMany({ where: demoOwnerFilter, select: { id: true } })).map(
+        (u) => u.id,
+      )
+    : null;
+  const owner = sampleUsers ? { userId: { in: sampleUsers } } : {};
+  const inPeriod = { createdAt: { gte: since }, ...owner };
 
   const [monthMicros, byStatus, byKind, byUser, byDay, recentFailures, hitsByReason, hitsByUser] =
     await Promise.all([
-      monthSpendMicros(),
+      monthSpendMicros(sampleUsers ?? undefined),
       prisma.aiRun.groupBy({
         by: ['status'],
         where: inPeriod,
@@ -48,6 +55,7 @@ export async function overview(days: number) {
       prisma.$queryRaw<{ day: Date; runs: bigint; micros: bigint | null }[]>(Prisma.sql`
         SELECT date_trunc('day', "createdAt") AS day, count(*) AS runs, sum("costMicros") AS micros
         FROM "AiRun" WHERE "createdAt" >= ${since}
+        ${sampleUsers ? Prisma.sql`AND "userId" = ANY(${sampleUsers})` : Prisma.empty}
         GROUP BY 1 ORDER BY 1`),
       prisma.aiRun.findMany({
         where: { ...inPeriod, status: 'failed' },
@@ -83,7 +91,7 @@ export async function overview(days: number) {
     model: env.ANTHROPIC_MODEL,
     month: {
       costUsd: usd(monthMicros),
-      // 0 means "no cap".
+      // 0 means AI is paused.
       budgetUsd: env.AI_MONTHLY_BUDGET_USD,
     },
     totals: {

@@ -25,10 +25,14 @@ services:
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-claude-haiku-5-5}
       AI_DAILY_LIMIT: ${AI_DAILY_LIMIT:-10}
+      AI_MONTHLY_BUDGET_USD: ${AI_MONTHLY_BUDGET_USD:-1}
+      BREVO_API_KEY: ${BREVO_API_KEY:-}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      EMAIL_FROM: ${EMAIL_FROM:-MentorLoop <onboarding@resend.dev>}
       DEMO_MODE: ${DEMO_MODE:-true}
       SEED_ON_START: ${SEED_ON_START:-true}
       ADMIN_NAME: ${ADMIN_NAME:-Alex Morgan}
-      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@mentorloop.dev}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-mentor@mentorloop.dev}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin12345}
     depends_on:
       db:

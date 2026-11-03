@@ -17,6 +17,7 @@ COPY apps/api/package.json apps/api/
 # Production deps only. The Prisma CLI and tsx are runtime deps: they run migrations and the seed on start.
 RUN npm ci --omit=dev --workspace @mentor-loop/api --include-workspace-root=false && npm cache clean --force
 COPY apps/api/prisma apps/api/prisma
+COPY apps/api/prisma.config.ts apps/api/
 RUN npx --workspace @mentor-loop/api prisma generate
 COPY --from=build /app/apps/api/dist apps/api/dist
 COPY apps/api/docker-entrypoint.sh apps/api/

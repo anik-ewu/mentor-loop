@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { authApi } from '../api/auth';
-import type { User } from '../api/types';
+import type { LoginResult } from '../api/types';
 import { currentTheme, type Theme } from '../components/ui';
 import { useAuth } from './AuthContext';
 import s from './GoogleButton.module.css';
@@ -114,7 +114,7 @@ export function GoogleButton({
   onError,
   divider,
 }: {
-  onSuccess: (user: User) => void;
+  onSuccess: (result: LoginResult) => void;
   onError: (msg: string) => void;
   divider: ReactNode;
 }) {

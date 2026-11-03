@@ -10,6 +10,15 @@ const longDayFmt = new Intl.DateTimeFormat(undefined, {
 });
 const timeFmt = new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' });
 
+/** A link from user input, only if it's http(s). Older rows may hold anything. */
+export function safeHref(url: string) {
+  try {
+    return ['http:', 'https:'].includes(new URL(url).protocol) ? url : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 export const formatDay = (iso: string | Date) => dayFmt.format(new Date(iso));
 export const formatLongDay = (iso: string | Date) => longDayFmt.format(new Date(iso));
 export const formatTime = (iso: string | Date) => timeFmt.format(new Date(iso));

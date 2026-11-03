@@ -203,3 +203,13 @@
 .tab.active svg {
   transform: translateY(-2px) scale(1.12);
 }
+
+.demoNote {
+  margin: 0 0 var(--space-4);
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  background: var(--info-soft, var(--surface));
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 14px;
+}

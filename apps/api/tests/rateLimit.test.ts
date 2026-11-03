@@ -2,6 +2,7 @@ import express from 'express';
 import request from 'supertest';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createLimiter, createLoginFailureLimiter } from '../src/middleware/rateLimit';
+import { prisma } from '../src/lib/prisma';
 import { createUser, resetDb } from './helpers';
 
 const VERCEL_IP = 'x-vercel-forwarded-for';
@@ -130,7 +131,7 @@ describe('rate limits on the auth routes', () => {
   });
 
   it('counts each visitor separately on a route with only the client limit', async () => {
-    const body = { token: 'not-a-real-token', password: 'password123' };
+    const body = { token: 'not-a-real-token', password: 'long-enough-password' };
     for (let i = 0; i < 20; i++) await post('reset-password', body, ipNumber(1)).expect(400);
     await post('reset-password', body, ipNumber(1)).expect(429);
     await post('reset-password', body, ipNumber(2)).expect(400);
@@ -178,13 +179,32 @@ describe('rate limits on the auth routes', () => {
     await post('forgot-password', { email }, ipNumber(200)).expect(204);
   });
 
-  it('caps signups across everyone when the client IP keeps changing', async () => {
-    const email = 'taken@test.dev';
-    await createUser('user', email);
-    // A taken email answers 409 before the slow password hash, which keeps this test fast.
+  // Real password hashes, because this suite loads its own copy of the auth modules.
+  it(
+    'caps signups across everyone when the client IP keeps changing',
+    { timeout: 30_000 },
+    async () => {
+      const signup = (i: number) =>
+        post(
+          'signup',
+          { name: 'Test User', email: `user${i}@test.dev`, password: 'long-enough-password' },
+          ipNumber(i),
+        );
+      for (let i = 1; i <= 20; i++) await signup(i).expect(202);
+      await signup(21).expect(429);
+      await vi.waitFor(async () => expect(await prisma.user.count()).toBe(20));
+    },
+  );
+
+  it('limits signups per email, so one inbox cannot be flooded', { timeout: 30_000 }, async () => {
     const signup = (i: number) =>
-      post('signup', { name: 'Test User', email, password: 'password123' }, ipNumber(i));
-    for (let i = 1; i <= 50; i++) await signup(i).expect(409);
-    await signup(51).expect(429);
+      post(
+        'signup',
+        { name: 'Test User', email: 'one@test.dev', password: 'long-enough-password' },
+        ipNumber(i),
+      );
+    for (let i = 1; i <= 3; i++) await signup(i).expect(202);
+    await signup(4).expect(429);
+    await vi.waitFor(async () => expect(await prisma.user.count()).toBe(1));
   });
 });

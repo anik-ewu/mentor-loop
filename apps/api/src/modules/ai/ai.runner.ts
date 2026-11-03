@@ -1,6 +1,8 @@
 import type { AiKind, Prisma, Role } from '@prisma/client';
 import { env } from '../../config/env';
+import { isDemoEmail } from '../../lib/demo';
 import { AppError } from '../../lib/errors';
+import { emailEnabled } from '../../lib/mailer';
 import { prisma } from '../../lib/prisma';
 import { AiFailure, aiEnabled, type AiUsage } from './claude';
 
@@ -15,9 +17,9 @@ export const monthStart = (now = new Date()) =>
   new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
 
 /** What all AI runs have cost so far this month, in micro-dollars. */
-export async function monthSpendMicros() {
+export async function monthSpendMicros(userIds?: string[]) {
   const { _sum } = await prisma.aiRun.aggregate({
-    where: { createdAt: { gte: monthStart() } },
+    where: { createdAt: { gte: monthStart() }, ...(userIds && { userId: { in: userIds } }) },
     _sum: { costMicros: true },
   });
   return _sum.costMicros ?? 0;
@@ -25,15 +27,53 @@ export async function monthSpendMicros() {
 
 const budgetMicros = () => Math.round(env.AI_MONTHLY_BUDGET_USD * 1_000_000);
 
+/** A run's tokens are only known when it ends, so assume about the most a large one can use. */
+const IN_FLIGHT_INPUT_TOKENS = 100_000;
+const IN_FLIGHT_OUTPUT_TOKENS = 16_000;
+const IN_FLIGHT_WINDOW_MS = 10 * 60_000;
+
 /**
- * Throws 503 when AI is off or this month's budget is spent (for everyone), and 429 when the
- * user has used today's quota. The real admin is exempt from the daily quota, but not the shared
- * demo admin anyone can sign in as.
+ * What the unfinished runs may still cost. Without it, a run's cost would only count once it ended, so
+ * a long burst could pass the budget check freely. Requests arriving in the same instant can still
+ * overshoot, by about a cent or two each. Old rows are left out: a restart can leave one `processing`
+ * until the next boot cleans it up.
+ */
+async function inFlightMicros() {
+  const running = await prisma.aiRun.count({
+    where: { status: 'processing', createdAt: { gt: new Date(Date.now() - IN_FLIGHT_WINDOW_MS) } },
+  });
+  return Math.round(
+    running *
+      (IN_FLIGHT_INPUT_TOKENS * env.AI_PRICE_INPUT_PER_MTOK +
+        IN_FLIGHT_OUTPUT_TOKENS * env.AI_PRICE_OUTPUT_PER_MTOK),
+  );
+}
+
+/**
+ * Throws 503 when AI is off or this month's budget is spent (for everyone), 403 when the account
+ * hasn't confirmed its email, and 429 when the user has used today's quota. The real admin is exempt
+ * from the daily quota, but not the shared demo admin anyone can sign in as.
  */
 export async function assertCanRun(userId: string, role: Role) {
   if (!aiEnabled()) throw aiDisabled();
 
-  if (budgetMicros() > 0 && (await monthSpendMicros()) >= budgetMicros()) {
+  const user = await prisma.user.findUniqueOrThrow({
+    where: { id: userId },
+    select: { email: true, emailVerifiedAt: true },
+  });
+  // Otherwise each throwaway signup would be 10 more paid runs a day.
+  if (!user.emailVerifiedAt) {
+    throw new AppError(
+      403,
+      'EMAIL_NOT_VERIFIED',
+      emailEnabled()
+        ? 'Please confirm your email to use the AI coach. Log out and log in again to get a link.'
+        : 'Please confirm your email to use the AI coach: log out, then continue with Google using this address.',
+    );
+  }
+
+  const [spent, reserved] = await Promise.all([monthSpendMicros(), inFlightMicros()]);
+  if (spent + reserved >= budgetMicros()) {
     await prisma.aiLimitHit.create({ data: { userId, reason: 'budget' } });
     throw new AppError(
       503,
@@ -42,7 +82,7 @@ export async function assertCanRun(userId: string, role: Role) {
     );
   }
 
-  if (role === 'admin' && !env.DEMO_MODE) return;
+  if (role === 'admin' && !isDemoEmail(user.email)) return;
   // Failed runs count only when they used tokens: a refusal or cut-off answer was still paid
   // for, but an outage or setup problem shouldn't use up the day.
   const used = await prisma.aiRun.count({

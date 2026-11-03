@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import type { Booking } from '../api/types';
-import { formatRange, isPast } from '../lib/format';
+import { formatRange, isPast, safeHref } from '../lib/format';
 import { ClockIcon } from './icons';
 import { Avatar, StatusBadge } from './ui';
 import s from './BookingCard.module.css';
@@ -42,8 +42,8 @@ export function BookingCard({ booking, showUser, actions, index = 0 }: Props) {
               {booking.user.name} · {booking.user.email}
             </span>
           )}
-          {booking.cvUrl && (
-            <a href={booking.cvUrl} target="_blank" rel="noreferrer">
+          {booking.cvUrl && safeHref(booking.cvUrl) && (
+            <a href={safeHref(booking.cvUrl)} target="_blank" rel="noreferrer">
               View CV ↗
             </a>
           )}

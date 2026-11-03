@@ -1,3 +1,4 @@
+import { demoOwnerFilter } from '../../lib/demo';
 import { prisma } from '../../lib/prisma';
 import { conflict, notFound } from '../../lib/errors';
 import type { CreateSlotInput } from './slots.schema';
@@ -10,13 +11,16 @@ export const listOpen = () =>
   });
 
 /** Upcoming slots with their active booking, for the admin calendar. */
-export const listUpcoming = () =>
+export const listUpcoming = (onlySampleData = false) =>
   prisma.slot.findMany({
     where: { startsAt: { gt: new Date() } },
     orderBy: { startsAt: 'asc' },
     include: {
       bookings: {
-        where: { status: { in: ['pending', 'confirmed'] } },
+        where: {
+          status: { in: ['pending', 'confirmed'] },
+          ...(onlySampleData && { user: demoOwnerFilter }),
+        },
         include: { user: { select: { name: true, email: true } }, service: true },
       },
     },
@@ -31,8 +35,9 @@ export async function create(input: CreateSlotInput) {
 }
 
 export async function remove(id: string) {
+  // Conditional, so a booking made a moment ago isn't deleted along with its slot.
+  const { count } = await prisma.slot.deleteMany({ where: { id, status: 'open' } });
+  if (count === 1) return;
   const slot = await prisma.slot.findUnique({ where: { id } });
-  if (!slot) throw notFound('Slot');
-  if (slot.status === 'booked') throw conflict('This slot is booked. Cancel the booking first.');
-  await prisma.slot.delete({ where: { id } });
+  throw slot ? conflict('This slot is booked. Cancel the booking first.') : notFound('Slot');
 }

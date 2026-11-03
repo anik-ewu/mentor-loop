@@ -1,9 +1,13 @@
 import type { BookingStatus, Prisma, Role } from '@prisma/client';
+import { demoOwnerFilter } from '../../lib/demo';
 import { prisma } from '../../lib/prisma';
 import { badRequest, conflict, forbidden, notFound } from '../../lib/errors';
 import type { CreateBookingInput } from './bookings.schema';
 
 const ACTIVE: BookingStatus[] = ['pending', 'confirmed'];
+
+/** Upcoming sessions one account can hold, so nobody can take every open slot. */
+export const MAX_ACTIVE_BOOKINGS = 3;
 
 /** Which status changes the admin may make from each state. */
 const TRANSITIONS: Record<BookingStatus, BookingStatus[]> = {
@@ -47,6 +51,17 @@ export async function create(userId: string, input: CreateBookingInput) {
     if (!review) throw badRequest('That AI review cannot be attached to a booking');
   }
   const booking = await prisma.$transaction(async (tx) => {
+    // Locks this user's row: parallel requests take turns here, so they can't all pass the count.
+    await tx.$queryRaw`SELECT 1 FROM "User" WHERE "id" = ${userId} FOR UPDATE`;
+    const active = await tx.booking.count({
+      where: { userId, status: { in: ACTIVE }, slot: { startsAt: { gt: new Date() } } },
+    });
+    if (active >= MAX_ACTIVE_BOOKINGS) {
+      throw conflict(
+        `You can have up to ${MAX_ACTIVE_BOOKINGS} upcoming sessions. Cancel one to book another.`,
+      );
+    }
+
     const service = await tx.service.findFirst({ where: { id: input.serviceId, isActive: true } });
     if (!service) throw notFound('Service');
 
@@ -72,22 +87,30 @@ export const listForUser = (userId: string) =>
     })
     .then((list) => list.map(shape));
 
-export const listAll = (status?: BookingStatus) =>
+export const listAll = (status?: BookingStatus, onlySampleData = false) =>
   prisma.booking
     .findMany({
-      where: status ? { status } : undefined,
+      where: {
+        ...(status && { status }),
+        ...(onlySampleData && { user: demoOwnerFilter }),
+      },
       orderBy: { slot: { startsAt: 'asc' } },
       include: withDetails,
     })
     .then((list) => list.map(shape));
 
-async function setStatus(id: string, status: BookingStatus) {
+/**
+ * Conditional on the status the caller checked. Otherwise a second, parallel cancel would reopen the
+ * slot after someone else had booked it, and a third person could then double-book it.
+ */
+async function setStatus(id: string, from: BookingStatus, status: BookingStatus) {
   return prisma.$transaction(async (tx) => {
-    const booking = await tx.booking.update({
-      where: { id },
+    const { count } = await tx.booking.updateMany({
+      where: { id, status: from },
       data: { status },
-      include: withDetails,
     });
+    if (count !== 1) throw conflict('This booking was just changed. Refresh and try again.');
+    const booking = await tx.booking.findUniqueOrThrow({ where: { id }, include: withDetails });
     if (status === 'cancelled') {
       await tx.slot.update({ where: { id: booking.slotId }, data: { status: 'open' } });
     }
@@ -101,7 +124,7 @@ export async function cancel(id: string, actor: { id: string; role: Role }) {
   if (actor.role !== 'admin' && booking.userId !== actor.id) throw forbidden();
   if (!ACTIVE.includes(booking.status))
     throw badRequest(`This booking is already ${booking.status}`);
-  return setStatus(id, 'cancelled');
+  return setStatus(id, booking.status, 'cancelled');
 }
 
 export async function updateStatus(id: string, status: BookingStatus) {
@@ -110,16 +133,17 @@ export async function updateStatus(id: string, status: BookingStatus) {
   if (!TRANSITIONS[booking.status].includes(status)) {
     throw badRequest(`A ${booking.status} booking cannot be marked ${status}`);
   }
-  return setStatus(id, status);
+  return setStatus(id, booking.status, status);
 }
 
-export async function stats() {
+export async function stats(onlySampleData = false) {
+  const owner = onlySampleData ? { user: demoOwnerFilter } : {};
   const [byStatus, users, openSlots, next] = await Promise.all([
-    prisma.booking.groupBy({ by: ['status'], _count: true }),
-    prisma.user.count({ where: { role: 'user' } }),
+    prisma.booking.groupBy({ by: ['status'], where: owner, _count: true }),
+    prisma.user.count({ where: { role: 'user', ...(onlySampleData && demoOwnerFilter) } }),
     prisma.slot.count({ where: { status: 'open', startsAt: { gt: new Date() } } }),
     prisma.booking.findFirst({
-      where: { status: { in: ACTIVE }, slot: { startsAt: { gt: new Date() } } },
+      where: { ...owner, status: { in: ACTIVE }, slot: { startsAt: { gt: new Date() } } },
       orderBy: { slot: { startsAt: 'asc' } },
       include: withDetails,
     }),

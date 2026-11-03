@@ -222,4 +222,13 @@ describe('jobs', () => {
     });
     expect(body.upcomingInterviews).toMatchObject([{ title: 'Final', job: { company: 'Acme' } }]);
   });
+
+  it('refuses a job link that could run code', async () => {
+    const { agent } = await loginAs();
+    const res = await agent
+      .post('/api/jobs')
+      .send({ company: 'Acme', title: 'Dev', jobUrl: 'javascript:alert(1)' })
+      .expect(400);
+    expect(res.body.error.fields.jobUrl).toBeDefined();
+  });
 });

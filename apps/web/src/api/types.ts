@@ -9,7 +9,15 @@ export interface User {
   role: Role;
   /** IANA timezone used for weekly goals and streaks. */
   timezone: string;
+  emailVerified: boolean;
+  hasPassword: boolean;
+  twoFactorEnabled: boolean;
+  /** A shared demo account: security settings are locked. */
+  isDemo: boolean;
 }
+
+/** A login either finishes, or asks for a code from the authenticator app first. */
+export type LoginResult = { user: User } | { twoFactorRequired: true; ticket: string };
 
 export interface Service {
   id: string;
@@ -63,6 +71,7 @@ export interface AuthConfig {
   demoMode: boolean;
   aiEnabled: boolean;
   passwordResetEnabled: boolean;
+  emailSignupEnabled: boolean;
 }
 
 // ---------- Job tracker ----------

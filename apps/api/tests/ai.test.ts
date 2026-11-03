@@ -227,6 +227,97 @@ describe('AI resume review', () => {
     expect(await prisma.aiLimitHit.count({ where: { userId: user.id, reason: 'daily' } })).toBe(1);
   });
 
+  it('refuses accounts that have not confirmed their email, before any upload', async () => {
+    const { agent, user } = await loginAs('user');
+    await prisma.user.update({ where: { id: user.id }, data: { emailVerifiedAt: null } });
+    const res = await agent
+      .post('/api/ai/reviews')
+      .attach('resume', PDF, { filename: 'cv.pdf', contentType: 'application/pdf' })
+      .expect(403);
+    expect(res.body.error.code).toBe('EMAIL_NOT_VERIFIED');
+    expect(callStructured).not.toHaveBeenCalled();
+    expect(await prisma.aiRun.count()).toBe(0);
+  });
+
+  it('counts unfinished runs toward the budget, so a burst cannot overshoot it', async () => {
+    const { agent, user } = await loginAs('user');
+    const previous = env.AI_MONTHLY_BUDGET_USD;
+    env.AI_MONTHLY_BUDGET_USD = 0.001; // less than one in-flight run is assumed to cost
+    try {
+      await prisma.aiRun.create({
+        data: { userId: user.id, kind: 'resume_review', input: {}, model: 't' },
+      });
+      const res = await agent.post('/api/ai/reviews').send({ text: 'resume' }).expect(503);
+      expect(res.body.error.code).toBe('AI_BUDGET');
+    } finally {
+      env.AI_MONTHLY_BUDGET_USD = previous;
+    }
+  });
+
+  it('treats a budget of 0 as paused, not unlimited', async () => {
+    const { agent } = await loginAs('user');
+    const previous = env.AI_MONTHLY_BUDGET_USD;
+    env.AI_MONTHLY_BUDGET_USD = 0;
+    try {
+      await agent.post('/api/ai/reviews').send({ text: 'resume' }).expect(503);
+      expect(callStructured).not.toHaveBeenCalled();
+    } finally {
+      env.AI_MONTHLY_BUDGET_USD = previous;
+    }
+  });
+
+  it('turns away PDFs beyond the parallel limit, then frees the slots', async () => {
+    const { agent } = await loginAs('admin');
+    let finish!: () => void;
+    const blocked = new Promise((resolve) => {
+      finish = () => resolve(answer(review()));
+    });
+    vi.mocked(callStructured).mockReturnValue(blocked as ReturnType<typeof callStructured>);
+    const post = () =>
+      agent
+        .post('/api/ai/reviews')
+        .attach('resume', PDF, { filename: 'cv.pdf', contentType: 'application/pdf' });
+
+    for (let i = 0; i < 4; i++) await post().expect(202);
+    const busy = await post().expect(503);
+    expect(busy.body.error.code).toBe('AI_BUSY');
+
+    finish();
+    await settleRuns();
+    await post().expect(202);
+    await settleRuns();
+  });
+
+  it('does not make pasted text wait for a PDF slot', async () => {
+    const { agent } = await loginAs('admin');
+    let finish!: () => void;
+    const blocked = new Promise((resolve) => {
+      finish = () => resolve(answer(review()));
+    });
+    vi.mocked(callStructured).mockReturnValue(blocked as ReturnType<typeof callStructured>);
+    for (let i = 0; i < 6; i++) {
+      await agent.post('/api/ai/reviews').send({ text: 'resume' }).expect(202);
+    }
+    finish();
+    await settleRuns();
+  });
+
+  it('frees the PDF slot when a request fails before a run starts', async () => {
+    const { agent } = await loginAs('admin');
+    vi.mocked(callStructured).mockResolvedValue(answer(review()));
+    for (let i = 0; i < 6; i++) {
+      await agent
+        .post('/api/ai/reviews')
+        .attach('resume', Buffer.from('not a pdf'), {
+          filename: 'cv.pdf',
+          contentType: 'application/pdf',
+        })
+        .expect(400);
+    }
+    await agent.post('/api/ai/reviews').send({ text: 'resume' }).expect(202);
+    await settleRuns();
+  });
+
   it('limits the shared demo admin like any user', async () => {
     vi.mocked(callStructured).mockResolvedValue(answer(review()));
     const demo = request.agent(app);

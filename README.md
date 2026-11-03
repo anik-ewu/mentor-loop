@@ -15,11 +15,11 @@
 - **Job tracker:** a Kanban board (drag and drop, or a stage select on touch and keyboard) and a searchable table. Each job has its own page: details, a timeline of stage changes, interview rounds, follow-ups and notes, interview prep, and its resume match and cover letter. Stats show the response rate, interviews, offers and which follow-ups are due.
 - **AI coach** (Claude): upload a PDF or paste your resume and get an overall, ATS and **job match** score, prioritised fixes, before → after bullet rewrites, missing keywords and red flags. From a saved job it also writes **interview questions** (some about your own projects, with a checkbox to track which ones you have practised) and drafts an editable **cover letter** you can save to the job.
 - **Weekly goals and streaks:** targets like "5 applications, 2 interviews", with progress computed from what you log, in your own timezone; a daily activity streak and a weekly "all goals met" streak.
-- **AI usage (admin):** cost per day and per feature, top users, recent failures and who hits the limits, with an optional monthly budget that pauses AI once it's spent.
+- **AI usage (admin):** cost per day and per feature, top users, recent failures and who hits the limits, with a monthly budget that pauses AI once it's spent.
 - **Mentoring:** book a Resume Deep-Dive, Career Guidance Call or Mock Interview; attach an AI review so the mentor arrives prepared. The mentor confirms requests, publishes availability and manages services.
-- **Demo mode** lets visitors try both sides with one click ("Try as client" / "Try as admin").
+- **Demo mode** lets visitors try both sides with one click ("Try as client" / "Try as admin"). The demo mentor is read-only and sees only the demo client's data, never real clients.
 
-Also: email + password or Google sign-in, **no double booking**, a responsive dashboard (sidebar on desktop, tab bar on mobile), and light/dark themes.
+Also: email + password (confirmed by email) or Google sign-in, authenticator-app two-factor login for mentors, **no double booking**, a responsive dashboard (sidebar on desktop, tab bar on mobile), and light/dark themes.
 
 | Client dashboard                                   | Booking flow                                   |
 | -------------------------------------------------- | ---------------------------------------------- |
@@ -70,14 +70,14 @@ Also: email + password or Google sign-in, **no double booking**, a responsive da
 | `CLIENT_ORIGIN`                                 | `https://mentor-loop-five.vercel.app`                     |
 | `DEMO_MODE`                                     | `true` for the demo, `false` for real clients             |
 | `SEED_ON_START`                                 | `true` on the first deploy only, then `false`             |
-| `ADMIN_NAME` / `ADMIN_EMAIL` / `ADMIN_PASSWORD` | Mentor account created by the seed                        |
+| `ADMIN_NAME` / `ADMIN_EMAIL` / `ADMIN_PASSWORD` | Mentor account created by the seed; required to seed      |
 | `GOOGLE_CLIENT_ID`                              | Optional; empty hides the Google button                   |
 | `ANTHROPIC_API_KEY`                             | Optional; empty turns the AI coach off                    |
-| `RESEND_API_KEY` / `EMAIL_FROM`                 | Password reset emails (see below)                         |
+| `BREVO_API_KEY` / `EMAIL_FROM`                  | Confirmation and password reset emails (see below)        |
 | `ANTHROPIC_MODEL`                               | Default `claude-haiku-5-5`                                |
 | `AI_DAILY_LIMIT`                                | AI requests per user per 24 h (default `10`)              |
 | `AI_PRICE_INPUT_PER_MTOK` / `_OUTPUT_PER_MTOK`  | USD per million tokens (default Haiku 5.5: `0.1` / `0.5`) |
-| `AI_MONTHLY_BUDGET_USD`                         | Max AI spend per UTC month; `0` = no cap                  |
+| `AI_MONTHLY_BUDGET_USD`                         | Max AI spend per UTC month (default `1`); `0` pauses AI   |
 
 **Vercel environment variables**
 
@@ -109,7 +109,7 @@ npm run db:generate && npm run db:migrate && npm run db:seed
 npm run dev                 # API on :4000, web on :5173 (proxies /api)
 ```
 
-Demo accounts (local seed): mentor `admin@mentorloop.dev` / `admin12345`, client `demo@mentorloop.dev` / `demo12345`. `npm run db:reset-demo` wipes the client demo account's jobs, AI results, goals and bookings and reloads the demo data (a Bangladeshi job search: Pathao, bKash, Brain Station 23 and more).
+Local seed accounts: mentor `mentor@mentorloop.dev` / `admin12345`, client `demo@mentorloop.dev` / `demo12345`. `npm run db:reset-demo` wipes the client demo account's jobs, AI results, goals and bookings and reloads the demo data (a Bangladeshi job search: Pathao, bKash, Brain Station 23 and more).
 
 `npm test` (API tests, needs a `mentorloop_test` DB) · `npm run lint` · `npm run typecheck` · `npm run build`
 
@@ -134,9 +134,21 @@ Key decisions:
 
 Google Cloud Console → Credentials → **OAuth client ID** (Web). Add the site URL (e.g. `https://mentor-loop-five.vercel.app`) to **Authorized JavaScript origins**, then set `GOOGLE_CLIENT_ID` on Render.
 
-## Password reset emails
+## Emails: confirmation and password reset
 
-"Forgot password?" emails a one-hour, single-use link (only a SHA-256 of the token is stored). It is also how someone who signed up with Google adds a password. Emails go through [Resend](https://resend.com): create an API key and set `RESEND_API_KEY` on Render. `EMAIL_FROM` defaults to Resend's `onboarding@resend.dev` test sender, which can only deliver to your own Resend account email; verify a domain and set `EMAIL_FROM` (e.g. `MentorLoop <no-reply@yourdomain.com>`) to email anyone. With no key, the API prints the email, link included, to its log instead.
+New email signups get a 24-hour confirmation link, and "Forgot password?" a one-hour, single-use link (only SHA-256 hashes of the tokens are stored). The reset link is also how someone who signed up with Google adds a password.
+
+**Free setup, no domain needed: [Brevo](https://www.brevo.com).** Render's free tier blocks SMTP, so email has to go over an HTTP API. In Brevo, verify one sender address, create an API key, then set `BREVO_API_KEY` and `EMAIL_FROM` (e.g. `MentorLoop <you@gmail.com>`) on Render. The free plan allows 300 emails a day.
+
+[Resend](https://resend.com) also works (`RESEND_API_KEY`), but it can only email people other than you after you verify a domain you own.
+
+**Without either key in production**, email signup and password reset are off, and new accounts come through Google. Older password accounts can still log in, but the AI coach needs a confirmed email. In dev, the API prints the emails, links included, to its log.
+
+## Security notes
+
+- **Linking Google** to an account with the same email removes its password and logs out its sessions, unless it's a mentor. Someone may have signed up with that address first, waiting for the real owner to arrive. "Forgot password?" adds a new password.
+- **Two-factor login** is for mentor accounts, under Settings. Every way in (password, Google, reset link) asks for the code. If you lose both your phone and your recovery codes, clear `totpEnabledAt` on your row in the database. Changing `JWT_SECRET` also invalidates authenticator setups, because it encrypts them: recovery codes still work.
+- **AI spend** is capped by `AI_MONTHLY_BUDGET_USD`, counting unfinished runs at their likely maximum. For a hard limit on what you can owe, also keep your Anthropic account on prepaid credit with auto-reload off.
 
 ## AI coach (optional)
 

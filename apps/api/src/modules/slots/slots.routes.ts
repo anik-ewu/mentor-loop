@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { requireAdmin } from '../../middleware/auth';
+import { requireAdmin, requireAdminRead } from '../../middleware/auth';
 import { validateBody } from '../../middleware/validate';
 import { createSlotSchema } from './slots.schema';
 import * as slots from './slots.service';
@@ -10,8 +10,8 @@ slotsRouter.get('/', async (_req, res) => {
   res.json({ slots: await slots.listOpen() });
 });
 
-slotsRouter.get('/all', requireAdmin, async (_req, res) => {
-  res.json({ slots: await slots.listUpcoming() });
+slotsRouter.get('/all', requireAdminRead, async (req, res) => {
+  res.json({ slots: await slots.listUpcoming(req.auth!.demoAdmin) });
 });
 
 slotsRouter.post('/', requireAdmin, validateBody(createSlotSchema), async (req, res) => {

@@ -1,11 +1,9 @@
 generator client {
-  provider      = "prisma-client-js"
-  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 enum Role {
@@ -35,6 +33,18 @@ model User {
   resetTokenExpires DateTime?
   /// Carried in the session JWT; bumping it logs out every existing session.
   sessionVersion    Int              @default(0)
+  /// Set once the owner of this address has proved it. Required for AI and, with email on, to log in.
+  emailVerifiedAt      DateTime?
+  /// SHA-256 of the emailed confirmation token; the raw token is never stored.
+  emailVerifyTokenHash String?   @unique
+  emailVerifyExpires   DateTime?
+  /// Authenticator-app secret, encrypted. Mentor accounts only. Off until totpEnabledAt is set.
+  totpSecret           String?
+  totpEnabledAt        DateTime?
+  /// Last 30-second step used to log in, so a code can't be replayed.
+  totpLastStep         Int?
+  /// SHA-256 of each unused one-time recovery code.
+  recoveryCodeHashes   String[]  @default([])
   name              String
   avatarUrl         String?
   role              Role             @default(user)

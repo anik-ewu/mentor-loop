@@ -4,6 +4,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import { env } from './config/env';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
+import { generalLimiter } from './middleware/rateLimit';
 import { aiRouter } from './modules/ai/ai.routes';
 import { authRouter } from './modules/auth/auth.routes';
 import { bookingsRouter } from './modules/bookings/bookings.routes';
@@ -19,12 +20,15 @@ export function createApp() {
   app.set('trust proxy', 1);
   app.use(helmet());
   app.use(cors({ origin: env.CLIENT_ORIGIN, credentials: true }));
-  app.use(express.json({ limit: '100kb' }));
-  app.use(cookieParser());
 
+  // Before the limiter and body parsing: the uptime ping must always get through, cheaply.
   app.get('/api/health', (_req, res) => {
     res.json({ status: 'ok' });
   });
+
+  app.use(generalLimiter);
+  app.use(express.json({ limit: '100kb' }));
+  app.use(cookieParser());
 
   // Each feature is a self-contained module: add new ones (resources, courses...) here.
   app.use('/api/auth', authRouter);

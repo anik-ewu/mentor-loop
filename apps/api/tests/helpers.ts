@@ -1,4 +1,4 @@
-import bcrypt from 'bcryptjs';
+import bcrypt from 'bcrypt';
 import request from 'supertest';
 import { createApp } from '../src/app';
 import { prisma } from '../src/lib/prisma';
@@ -13,7 +13,9 @@ export async function resetDb() {
 
 export async function createUser(role: 'user' | 'admin' = 'user', email = `${role}@test.dev`) {
   const passwordHash = await bcrypt.hash('password123', 4);
-  return prisma.user.create({ data: { email, name: `Test ${role}`, role, passwordHash } });
+  return prisma.user.create({
+    data: { email, name: `Test ${role}`, role, passwordHash, emailVerifiedAt: new Date() },
+  });
 }
 
 /** Logs in and returns an agent that keeps the session cookie. */

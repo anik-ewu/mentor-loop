@@ -34,6 +34,18 @@ export const createLimiter = (options: LimiterOptions, enabled = env.NODE_ENV !=
   });
 
 /**
+ * A ceiling for all API traffic per visitor, well above real use: AI polling and page loads together
+ * stay far below 1 request per second. Stops one client from tying up the server and database.
+ */
+export const generalLimiter = createLimiter({
+  limit: 900,
+  legacyHeaders: false,
+  message: {
+    error: { code: 'RATE_LIMITED', message: 'Too many requests, try again in a few minutes' },
+  },
+});
+
+/**
  * Caps password guesses per account, even with a faked client IP. It can't catch one password tried
  * across many accounts. Server errors don't count, so an outage doesn't block anyone afterwards.
  * Google sign-in and a reset link already sent still work for an account that hits this limit.

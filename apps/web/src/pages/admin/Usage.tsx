@@ -253,7 +253,9 @@ function BudgetMeter({ month }: { month: AiUsage['month'] }) {
       <section className={`card ${s.budget}`}>
         <div className={s.cardHead}>
           <h2>This month: {money(month.costUsd)}</h2>
-          <span className="subtle">No monthly budget set (AI_MONTHLY_BUDGET_USD)</span>
+          <span className="subtle">
+            AI is paused: the monthly budget is 0 (AI_MONTHLY_BUDGET_USD)
+          </span>
         </div>
       </section>
     );

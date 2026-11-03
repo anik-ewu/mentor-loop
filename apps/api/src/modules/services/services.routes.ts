@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { requireAdmin } from '../../middleware/auth';
+import { requireAdmin, requireAdminRead } from '../../middleware/auth';
 import { validateBody } from '../../middleware/validate';
 import { createServiceSchema, updateServiceSchema } from './services.schema';
 import * as services from './services.service';
@@ -10,7 +10,7 @@ servicesRouter.get('/', async (_req, res) => {
   res.json({ services: await services.listActive() });
 });
 
-servicesRouter.get('/all', requireAdmin, async (_req, res) => {
+servicesRouter.get('/all', requireAdminRead, async (_req, res) => {
   res.json({ services: await services.listAll() });
 });
 

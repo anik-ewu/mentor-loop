@@ -1,8 +1,8 @@
-import { PrismaClient } from '@prisma/client';
+import { createScriptClient } from './client';
 import { DEMO_EMAIL, resetDemo, seedDemoBookings, seedDemoGoals, seedDemoJobs } from './demo';
 
 /** Replaces the demo account's jobs, AI results, goals and bookings with fresh demo data. */
-const prisma = new PrismaClient();
+const prisma = createScriptClient();
 
 async function main() {
   const demo = await prisma.user.findUnique({ where: { email: DEMO_EMAIL } });

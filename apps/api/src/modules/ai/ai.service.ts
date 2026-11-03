@@ -25,6 +25,9 @@ export interface PdfUpload {
   originalname: string;
 }
 
+/** Called once the upload's memory can be freed: when the run ends, or if it never starts. */
+type ReleasePdf = () => void;
+
 /** Loads one of the user's jobs, or 400 (it's an input, not the resource being read). */
 async function ownJob(userId: string, jobId: string) {
   const job = await prisma.jobApplication.findFirst({ where: { id: jobId, userId } });
@@ -57,7 +60,12 @@ function clampReview(r: ReviewOutput): ReviewOutput {
   };
 }
 
-export async function createReview(actor: Actor, req: ReviewRequest, pdf?: PdfUpload) {
+export async function createReview(
+  actor: Actor,
+  req: ReviewRequest,
+  pdf?: PdfUpload,
+  onStarted?: () => ReleasePdf,
+) {
   if (!!pdf === !!req.text) {
     throw badRequest('Upload a PDF or paste your resume text', {
       resume: ['Upload a PDF or paste your resume text (one of the two)'],
@@ -115,13 +123,19 @@ export async function createReview(actor: Actor, req: ReviewRequest, pdf?: PdfUp
   return startRun(
     { userId: actor.id, role: actor.role, kind: 'resume_review', input, jobId: job?.id },
     async () => {
-      const { output, usage } = await callStructured({
-        system: REVIEW_SYSTEM,
-        content,
-        schema: reviewOutputSchema,
-      });
-      const result = clampReview(output);
-      return { result, score: result.jobMatch?.score ?? result.overallScore, usage };
+      // This closure keeps the PDF in memory for the whole model call, so it holds its slot until then.
+      const release = onStarted?.();
+      try {
+        const { output, usage } = await callStructured({
+          system: REVIEW_SYSTEM,
+          content,
+          schema: reviewOutputSchema,
+        });
+        const result = clampReview(output);
+        return { result, score: result.jobMatch?.score ?? result.overallScore, usage };
+      } finally {
+        release?.();
+      }
     },
   );
 }

@@ -1,4 +1,5 @@
 import type { NextFunction, Request, Response } from 'express';
+import { DEMO_EMAILS } from '../lib/demo';
 import { forbidden, unauthorized } from '../lib/errors';
 import { verifyToken, type AuthPayload } from '../lib/jwt';
 import { prisma } from '../lib/prisma';
@@ -7,7 +8,10 @@ export const AUTH_COOKIE = 'ml_session';
 
 declare module 'express-serve-static-core' {
   interface Request {
-    auth?: AuthPayload;
+    auth?: AuthPayload & {
+      /** The shared demo mentor, whom anyone can sign in as: read-only, sees sample data only. */
+      demoAdmin: boolean;
+    };
   }
 }
 
@@ -15,7 +19,7 @@ declare module 'express-serve-static-core' {
  * The session's payload, or null when the token is invalid, expired or revoked. Tokens are
  * stateless, so a password reset bumps User.sessionVersion and this rejects tokens from before it.
  */
-async function readSession(token: string): Promise<AuthPayload | null> {
+async function readSession(token: string) {
   let payload: AuthPayload;
   try {
     payload = verifyToken(token);
@@ -24,9 +28,11 @@ async function readSession(token: string): Promise<AuthPayload | null> {
   }
   const user = await prisma.user.findUnique({
     where: { id: payload.sub },
-    select: { sessionVersion: true },
+    select: { sessionVersion: true, email: true },
   });
-  return user && user.sessionVersion === (payload.ver ?? 0) ? payload : null;
+  if (!user || user.sessionVersion !== (payload.ver ?? 0)) return null;
+  // By address, not DEMO_MODE: a demo session must not turn into a full admin if the mode goes off.
+  return { ...payload, demoAdmin: user.email === DEMO_EMAILS.admin };
 }
 
 export async function requireAuth(req: Request, _res: Response, next: NextFunction) {
@@ -54,11 +60,23 @@ export async function optionalAuth(req: Request, _res: Response, next: NextFunct
   }
 }
 
-export function requireAdmin(req: Request, res: Response, next: NextFunction) {
+/** For admin pages that only read. The route must limit the demo mentor to sample data. */
+export function requireAdminRead(req: Request, res: Response, next: NextFunction) {
   void requireAuth(req, res, (err?: unknown) => {
     if (err) return next(err);
     if (req.auth?.role !== 'admin') return next(forbidden());
     next();
+  });
+}
+
+export const demoReadOnly = () =>
+  forbidden('The demo mentor account is read-only. Changes are turned off in this demo.');
+
+/** For anything that changes data or shows real clients: the real mentor only. */
+export function requireAdmin(req: Request, res: Response, next: NextFunction) {
+  requireAdminRead(req, res, (err?: unknown) => {
+    if (err) return next(err);
+    next(req.auth?.demoAdmin ? demoReadOnly() : undefined);
   });
 }
 

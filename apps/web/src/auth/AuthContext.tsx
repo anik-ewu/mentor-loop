@@ -77,6 +77,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           demoMode: false,
           aiEnabled: false,
           passwordResetEnabled: false,
+          emailSignupEnabled: false,
         },
         configLoaded: config.isSuccess,
         setUser,

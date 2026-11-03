@@ -97,10 +97,15 @@ export function ResetPassword() {
     setAlert(null);
     setSubmitting(true);
     try {
-      const u = await authApi.resetPassword({ token, password });
-      setUser(u);
+      const result = await authApi.resetPassword({ token, password });
+      if (!('user' in result)) {
+        toast('Password updated. Enter your code to log in.');
+        navigate('/login', { replace: true, state: { ticket: result.ticket } });
+        return;
+      }
+      setUser(result.user);
       toast('Password updated, you are logged in');
-      navigate(homeFor(u), { replace: true });
+      navigate(homeFor(result.user), { replace: true });
     } catch (err) {
       if (err instanceof ApiError && err.fields.password) setError(err.fields.password[0]);
       else setAlert((err as Error).message);
@@ -128,13 +133,94 @@ export function ResetPassword() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             error={error}
-            hint="At least 8 characters"
+            hint="At least 12 characters"
             required
           />
           <Button type="submit" variant="primary" size="lg" block loading={submitting}>
             Set password
           </Button>
         </form>
+      </div>
+    </CursorGlow>
+  );
+}
+
+/**
+ * Asks for the password from signup, so a link can't activate a password set by someone else: a
+ * stranger may have signed up with this address. Mail scanners that open links can't confirm either.
+ * Doesn't log in, so it never puts the reader into an account they may not have made.
+ */
+export function VerifyEmail() {
+  const [params, setParams] = useSearchParams();
+  const [token] = useState(() => params.get('token') ?? '');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState<string>();
+  const [alert, setAlert] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [done, setDone] = useState(false);
+
+  useEffect(() => {
+    if (params.has('token')) setParams({}, { replace: true });
+  }, [params, setParams]);
+
+  if (!token) return <Navigate to="/login" replace />;
+
+  const submit = async (e: FormEvent) => {
+    e.preventDefault();
+    setError(undefined);
+    setAlert(null);
+    setSubmitting(true);
+    try {
+      await authApi.verifyEmail({ token, password });
+      setDone(true);
+    } catch (err) {
+      if (err instanceof ApiError && err.fields.password) setError(err.fields.password[0]);
+      else setAlert((err as Error).message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <CursorGlow className={s.wrap}>
+      <meta name="referrer" content="no-referrer" />
+      <div className={s.card}>
+        <h1>Confirm your email</h1>
+        {done ? (
+          <p className={s.notice} role="status">
+            Your email is confirmed. You can log in now.
+          </p>
+        ) : (
+          <>
+            <p className={s.sub}>
+              Enter the password you chose when you signed up. Didn't sign up? Close this page and
+              nothing will happen.
+            </p>
+            <form className={s.form} onSubmit={submit} noValidate>
+              {alert && (
+                <div className={s.alert} role="alert">
+                  {alert}
+                </div>
+              )}
+              <Field
+                label="Password"
+                name="password"
+                type="password"
+                autoComplete="current-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                error={error}
+                required
+              />
+              <Button type="submit" variant="primary" size="lg" block loading={submitting}>
+                Confirm my email
+              </Button>
+            </form>
+          </>
+        )}
+        <p className={s.footer}>
+          <Link to="/login">Go to log in</Link>
+        </p>
       </div>
     </CursorGlow>
   );

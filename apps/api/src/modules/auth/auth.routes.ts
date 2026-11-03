@@ -1,5 +1,4 @@
 import { Router, type Request, type Response } from 'express';
-import rateLimit from 'express-rate-limit';
 import type { User } from '@prisma/client';
 import { env } from '../../config/env';
 import { aiEnabled } from '../ai/claude';
@@ -7,6 +6,12 @@ import { notFound } from '../../lib/errors';
 import { emailEnabled } from '../../lib/mailer';
 import { signToken } from '../../lib/jwt';
 import { AUTH_COOKIE, currentUserId, optionalAuth, requireAuth } from '../../middleware/auth';
+import {
+  createLimiter,
+  createLoginFailureLimiter,
+  emailKey,
+  everyoneKey,
+} from '../../middleware/rateLimit';
 import { validateBody } from '../../middleware/validate';
 import {
   demoSchema,
@@ -20,20 +25,33 @@ import {
 import * as authService from './auth.service';
 
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+const ONE_HOUR_MS = 60 * 60 * 1000;
 
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  limit: 20,
-  skip: () => env.NODE_ENV === 'test',
-  message: { error: { code: 'RATE_LIMITED', message: 'Too many attempts, try again later' } },
-});
+const authLimiter = createLimiter({ limit: 20 });
 
 /** Stricter than authLimiter: each request sends an email. */
-const forgotLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  limit: 5,
-  skip: () => env.NODE_ENV === 'test',
-  message: { error: { code: 'RATE_LIMITED', message: 'Too many attempts, try again later' } },
+const forgotLimiter = createLimiter({ limit: 5 });
+
+const loginFailureLimiter = createLoginFailureLimiter();
+
+/** A new token voids the last one, so this limits voiding someone's link to 3 times an hour. */
+const forgotEmailLimiter = createLimiter({
+  windowMs: ONE_HOUR_MS,
+  limit: 3,
+  keyGenerator: emailKey,
+  legacyHeaders: false,
+});
+
+// Backstops for faked client IPs: each signup costs a slow password hash, each reset an email.
+const signupBackstop = createLimiter({
+  limit: 50,
+  keyGenerator: everyoneKey,
+  legacyHeaders: false,
+});
+const forgotBackstop = createLimiter({
+  limit: 20,
+  keyGenerator: everyoneKey,
+  legacyHeaders: false,
 });
 
 // `secure` follows the request scheme (trust proxy is on), so HTTPS deployments get Secure cookies.
@@ -60,13 +78,25 @@ authRouter.get('/config', (_req, res) => {
   });
 });
 
-authRouter.post('/signup', authLimiter, validateBody(signupSchema), async (req, res) => {
-  startSession(req, res, await authService.signup(req.body), 201);
-});
+authRouter.post(
+  '/signup',
+  authLimiter,
+  validateBody(signupSchema),
+  signupBackstop,
+  async (req, res) => {
+    startSession(req, res, await authService.signup(req.body), 201);
+  },
+);
 
-authRouter.post('/login', authLimiter, validateBody(loginSchema), async (req, res) => {
-  startSession(req, res, await authService.login(req.body));
-});
+authRouter.post(
+  '/login',
+  authLimiter,
+  validateBody(loginSchema),
+  loginFailureLimiter,
+  async (req, res) => {
+    startSession(req, res, await authService.login(req.body));
+  },
+);
 
 authRouter.post('/google', authLimiter, validateBody(googleSchema), async (req, res) => {
   if (!env.GOOGLE_CLIENT_ID) throw notFound('Google sign-in');
@@ -77,6 +107,9 @@ authRouter.post(
   '/forgot-password',
   forgotLimiter,
   validateBody(forgotPasswordSchema),
+  // In this order: a request the shared limit turns away must not use up the email's limit.
+  forgotBackstop,
+  forgotEmailLimiter,
   async (req, res) => {
     if (!emailEnabled()) throw notFound('Password reset');
     // Not awaited: an unknown email returning faster than a real one would reveal which exists.

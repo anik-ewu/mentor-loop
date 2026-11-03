@@ -1,14 +1,17 @@
 import { z } from 'zod';
 import { isValidTimezone } from '../../lib/timezone';
 
+/** 254 is the longest address email allows. Rate limits keep this value in memory as a key. */
+const email = z.email('Enter a valid email').max(254, 'Enter a valid email').trim().toLowerCase();
+
 export const signupSchema = z.object({
   name: z.string().trim().min(2, 'Name is too short').max(80),
-  email: z.email('Enter a valid email').trim().toLowerCase(),
+  email,
   password: z.string().min(8, 'Use at least 8 characters').max(128),
 });
 
 export const loginSchema = z.object({
-  email: z.email('Enter a valid email').trim().toLowerCase(),
+  email,
   password: z.string().min(1, 'Password is required'),
 });
 
@@ -17,7 +20,7 @@ export const googleSchema = z.object({
 });
 
 export const forgotPasswordSchema = z.object({
-  email: z.email('Enter a valid email').trim().toLowerCase(),
+  email,
 });
 
 export const resetPasswordSchema = z.object({
